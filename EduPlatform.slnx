@@ -1,0 +1,22 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/EduPlatform.Api/EduPlatform.Api.csproj" />
+  </Folder>
+  <Folder Name="/src/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/EduPlatform.BuildingBlocks.Application/EduPlatform.BuildingBlocks.Application.csproj" />
+    <Project Path="src/BuildingBlocks/EduPlatform.BuildingBlocks.Domain/EduPlatform.BuildingBlocks.Domain.csproj" />
+    <Project Path="src/BuildingBlocks/EduPlatform.BuildingBlocks.Events/EduPlatform.BuildingBlocks.Events.csproj" />
+    <Project Path="src/BuildingBlocks/EduPlatform.BuildingBlocks.Infrastructure/EduPlatform.BuildingBlocks.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Identity/">
+    <Project Path="src/Modules/Identity/EduPlatform.Modules.Identity.Application/EduPlatform.Modules.Identity.Application.csproj" />
+    <Project Path="src/Modules/Identity/EduPlatform.Modules.Identity.Contracts/EduPlatform.Modules.Identity.Contracts.csproj" />
+    <Project Path="src/Modules/Identity/EduPlatform.Modules.Identity.Domain/EduPlatform.Modules.Identity.Domain.csproj" />
+    <Project Path="src/Modules/Identity/EduPlatform.Modules.Identity.Infrastructure/EduPlatform.Modules.Identity.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/EduPlatform.Api.IntegrationTests/EduPlatform.Api.IntegrationTests.csproj" />
+    <Project Path="tests/EduPlatform.ArchitectureTests/EduPlatform.ArchitectureTests.csproj" />
+  </Folder>
+</Solution>

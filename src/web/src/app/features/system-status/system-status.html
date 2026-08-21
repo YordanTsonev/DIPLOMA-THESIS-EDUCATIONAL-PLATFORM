@@ -1,0 +1,40 @@
+<section class="status">
+  <header>
+    <h1>EduPlatform</h1>
+    <p class="subtitle">Phase 0 — infrastructure smoke check</p>
+  </header>
+
+  @if (loading()) {
+    <p class="muted">Checking…</p>
+  } @else if (error(); as message) {
+    <p class="error" role="alert">{{ message }}</p>
+  } @else {
+    @if (info(); as api) {
+      <dl class="info">
+        <dt>Application</dt><dd>{{ api.application }}</dd>
+        <dt>Version</dt><dd>{{ api.version }}</dd>
+        <dt>Environment</dt><dd>{{ api.environment }}</dd>
+        <dt>Server time</dt><dd>{{ api.serverTimeUtc | date: 'medium' }}</dd>
+      </dl>
+    }
+
+    <h2>
+      Dependencies
+      <span class="badge" [class.ok]="isHealthy(overallStatus() ?? '')">{{ overallStatus() }}</span>
+    </h2>
+
+    <ul class="dependencies">
+      @for (dependency of dependencies(); track dependency.name) {
+        <li>
+          <span class="dot" [class.ok]="isHealthy(dependency.status)"></span>
+          <span class="name">{{ dependency.name }}</span>
+          <span class="value">{{ dependency.status }}</span>
+        </li>
+      } @empty {
+        <li class="muted">No dependency information available.</li>
+      }
+    </ul>
+  }
+
+  <button type="button" (click)="refresh()" [disabled]="loading()">Refresh</button>
+</section>

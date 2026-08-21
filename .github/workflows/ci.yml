@@ -1,0 +1,125 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  # Turns on TreatWarningsAsErrors via Directory.Build.props: warnings are advisory on a
+  # developer machine and blocking here.
+  ContinuousIntegrationBuild: true
+
+jobs:
+  backend:
+    name: Backend — build & test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore EduPlatform.slnx
+
+      - name: Build
+        run: dotnet build EduPlatform.slnx --no-restore --configuration Release
+
+      # Integration tests start their own PostgreSQL through Testcontainers, which needs the
+      # Docker daemon the ubuntu runner already provides. No service container is declared
+      # here on purpose — the tests own their database lifecycle.
+      - name: Test
+        run: >
+          dotnet test EduPlatform.slnx
+          --no-build
+          --configuration Release
+          --logger "trx;LogFileName=test-results.trx"
+          --collect:"XPlat Code Coverage"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotnet-test-results
+          path: '**/TestResults/**'
+          retention-days: 7
+
+  frontend:
+    name: Frontend — build & test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check whether the Angular app exists yet
+        id: probe
+        run: echo "present=${{ hashFiles('src/web/package.json') != '' }}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Node
+        if: steps.probe.outputs.present == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: src/web/package-lock.json
+
+      - name: Install
+        if: steps.probe.outputs.present == 'true'
+        working-directory: src/web
+        run: npm ci
+
+      - name: Lint
+        if: steps.probe.outputs.present == 'true'
+        working-directory: src/web
+        run: npm run lint --if-present
+
+      - name: Test
+        if: steps.probe.outputs.present == 'true'
+        working-directory: src/web
+        # Angular 22 runs unit tests on Vitest with jsdom — no browser needed.
+        run: npm test -- --watch=false
+
+      - name: Build
+        if: steps.probe.outputs.present == 'true'
+        working-directory: src/web
+        run: npm run build
+
+  vulnerabilities:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore EduPlatform.slnx
+
+      # A vulnerable transitive package should fail the build, not sit in a report nobody reads.
+      - name: Audit NuGet packages
+        run: |
+          dotnet list EduPlatform.slnx package --vulnerable --include-transitive > audit.txt
+          cat audit.txt
+          if grep -q "has the following vulnerable packages" audit.txt; then
+            echo "::error::Vulnerable NuGet packages detected."
+            exit 1
+          fi

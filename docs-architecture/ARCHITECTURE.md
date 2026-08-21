@@ -48,7 +48,7 @@ Alternatives considered: **MongoDB**, **Firebase Firestore**, **SQL Server**.
 
 > **Firebase stays in the project in exactly one place:** Firebase Cloud Messaging for push notifications. That is a narrow, standard, free choice that does not couple the rest of the system to it.
 
-### 1.2 Backend: ASP.NET Core 9
+### 1.2 Backend: ASP.NET Core 10
 
 Alternatives considered: **Spring Boot 3**, **NestJS**.
 
@@ -69,7 +69,7 @@ Alternatives considered: **Spring Boot 3**, **NestJS**.
 | Decision | Choice | Primary reason |
 |---|---|---|
 | Database | PostgreSQL 17 + pgvector | Relational domain + built-in RAG |
-| Backend | ASP.NET Core 9 | Consistency with Angular, SignalR, EF Core |
+| Backend | ASP.NET Core 10 (LTS) | Consistency with Angular, SignalR, EF Core |
 | Architecture | Modular monolith | Clear boundaries without distributed complexity |
 | Real-time | SignalR | Built in, with Redis backplane |
 | File storage | MinIO | S3 API, runs in both Docker and Kubernetes |
@@ -117,7 +117,23 @@ Modules/Gradebook/
 
 Dependencies point **inward**: `Infrastructure → Application → Domain`. The domain depends on nothing.
 
-**Application-layer pattern:** CQRS via MediatR. Commands mutate state and publish events; queries read directly and project into DTOs without passing through domain entities.
+**Application-layer pattern:** CQRS through a small hand-written dispatcher in `BuildingBlocks.Application` (see §2.4). Commands mutate state and publish events; queries read directly and project into DTOs without passing through domain entities.
+
+### 2.4 No mediator library
+
+The dispatcher, the handler interfaces and the behaviour pipeline are written by hand —
+roughly 200 lines in `BuildingBlocks.Application/Messaging`. MediatR was the obvious
+candidate and was rejected for one reason: from version 14 it ships under the Reciprocal
+Public License 1.5, which obliges anyone who *deploys* software built on it — including
+internally, inside a single school — to publish their source. That is incompatible with
+releasing this platform under MIT and would quietly bind any school that later ran it.
+
+The replacement is not a sacrifice. The contract a mediator provides here is three methods
+(`SendAsync`, `SendAsync<TResult>`, `QueryAsync`) plus an ordered behaviour chain; the
+implementation caches a closed generic wrapper per message type, so reflection is paid once
+per type and never per request. Writing it also removes the usual criticism of mediator
+libraries at a thesis defence — that they hide control flow behind a library the author
+cannot explain.
 
 ---
 
@@ -204,7 +220,7 @@ src/
 │   ├── Intelligence/      …
 │   └── Analytics/         …
 │
-└── web/                                       Angular 20
+└── web/                                       Angular 22
     ├── src/app/core/                          Interceptors, guards, SignalR service, auth
     ├── src/app/shared/                        UI components, pipes, directives
     ├── src/app/features/
@@ -695,7 +711,7 @@ A Grafana dashboard of business metrics (submissions made, tests started, daily 
 
 | Level | Tool | Scope |
 |---|---|---|
-| Unit | xUnit + FluentAssertions | Domain rules: performance calculation, test scoring, late submission, grade validity |
+| Unit | xUnit + Shouldly | Domain rules: performance calculation, test scoring, late submission, grade validity |
 | Integration | xUnit + **Testcontainers** | Real PostgreSQL container; EF configurations, migrations, access rules, transactions |
 | API | `WebApplicationFactory` | Full HTTP round trip with authentication; verifies a student cannot reach another student's data |
 | Architecture | NetArchTest | A module never references another module's internals; the domain has no infrastructure dependencies |
@@ -731,6 +747,7 @@ A Grafana dashboard of business metrics (submissions made, tests started, daily 
 | Decision | Trade-off | Why it is acceptable |
 |---|---|---|
 | Modular monolith | A single module cannot be scaled independently | The volume does not require it; the boundaries allow extraction when it does |
+| Hand-written dispatcher instead of MediatR | ~200 lines to own and test | Avoids the RPL-1.5 source-disclosure obligation MediatR 14 places on deployers |
 | Single PostgreSQL instance | Single point of failure | CloudNativePG provides a replica and automatic failover; sharding complexity is unjustified |
 | Self-hosted embeddings | One more container and ~2 GB RAM | No per-request cost, better Bulgarian, data never leaves the system |
 | AI depends on an external provider | An outage disables AI features | Degrades gracefully — the platform works without AI; results are cached |
