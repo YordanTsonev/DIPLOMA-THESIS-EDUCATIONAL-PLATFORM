@@ -38,9 +38,10 @@ jobs:
       - name: Build
         run: dotnet build EduPlatform.slnx --no-restore --configuration Release
 
-      # Integration tests start their own PostgreSQL through Testcontainers, which needs the
-      # Docker daemon the ubuntu runner already provides. No service container is declared
-      # here on purpose — the tests own their database lifecycle.
+      # DatabaseTests start their own PostgreSQL through Testcontainers, which needs the Docker
+      # daemon the ubuntu runner already provides. No service container is declared here on
+      # purpose — the tests own their database lifecycle. SystemEndpointsTests need no database
+      # and run entirely in memory through WebApplicationFactory.
       - name: Test
         run: >
           dotnet test EduPlatform.slnx
@@ -123,3 +124,17 @@ jobs:
             echo "::error::Vulnerable NuGet packages detected."
             exit 1
           fi
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: src/web/package-lock.json
+
+      # Only high and critical advisories fail the build. Angular's toolchain regularly carries
+      # low-severity advisories in build-time-only dependencies, which would otherwise make this
+      # job red for something that never reaches the browser.
+      - name: Audit npm packages
+        working-directory: src/web
+        run: npm audit --audit-level=high
