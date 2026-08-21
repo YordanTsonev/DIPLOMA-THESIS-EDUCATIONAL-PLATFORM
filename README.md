@@ -134,6 +134,17 @@ npm --prefix src/web start
 App: `http://localhost:4200`. The dev server proxies `/api` and `/health` to `http://localhost:5000`,
 so the browser sees a single origin.
 
+### 4. Development data (optional)
+
+```bash
+dotnet run --project src/EduPlatform.Api -- --seed
+```
+
+Populates the development data set and exits without serving traffic. Seeders are idempotent, so
+this is safe to re-run. No module registers a seeder before Phase 1, so today it reports
+`No data seeders are registered` and exits — the mechanism is wired, there is simply nothing to
+populate yet.
+
 ### Local endpoints
 
 | Service | Address | Credentials |
@@ -234,6 +245,7 @@ npm --prefix src/web test -- --watch=false
 | Architecture | 5 | Module boundaries enforced mechanically with NetArchTest — a violation fails the build | no |
 | API pipeline | 5 | The real request pipeline through `WebApplicationFactory`: routing, correlation id, Problem Details, liveness probe | no |
 | Database | 4 | A real PostgreSQL 17 server started by Testcontainers: connectivity, `pgvector` distance operator, `pg_trgm`, per-module schema isolation | **yes** |
+| Seeding | 4 | Seeder discovery through DI, execution order, and that an empty registration is valid | no |
 | Frontend | 1 | Application bootstraps (Vitest, jsdom) | no |
 
 The database tests use the same `pgvector/pgvector:pg17` image as `docker-compose.yml`, so they

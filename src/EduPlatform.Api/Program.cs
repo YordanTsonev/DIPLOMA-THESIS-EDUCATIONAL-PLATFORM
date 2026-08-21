@@ -5,6 +5,7 @@ using EduPlatform.Api.Middleware;
 using EduPlatform.BuildingBlocks.Application;
 using EduPlatform.BuildingBlocks.Events;
 using EduPlatform.BuildingBlocks.Infrastructure;
+using EduPlatform.BuildingBlocks.Infrastructure.Seeding;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Scalar.AspNetCore;
@@ -136,6 +137,17 @@ try
     });
 
     app.MapSystemEndpoints();
+
+    // ---- Seeding -------------------------------------------------------------------
+    // "dotnet run --project src/EduPlatform.Api -- --seed" populates the development data set
+    // and exits without serving traffic. Never runs on an ordinary start.
+    if (args.Contains(DataSeedRunner.CommandLineFlag, StringComparer.Ordinal))
+    {
+        await using var scope = app.Services.CreateAsyncScope();
+        var runner = scope.ServiceProvider.GetRequiredService<DataSeedRunner>();
+        await runner.RunAsync().ConfigureAwait(false);
+        return 0;
+    }
 
     await app.RunAsync().ConfigureAwait(false);
     return 0;
