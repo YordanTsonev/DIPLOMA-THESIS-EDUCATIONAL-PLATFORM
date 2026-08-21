@@ -17,7 +17,7 @@ A modern educational platform designed as an improved alternative to the Bulgari
 
 ## Features
 
-### 👨‍🎓 For students
+### For students
 - Registration and login, personal dashboard
 - Weekly timetable and calendar with tests, exams and deadlines
 - Access to learning materials by subject
@@ -28,7 +28,7 @@ A modern educational platform designed as an improved alternative to the Bulgari
 - AI assistant for explaining difficult topics and summarizing lessons
 - Notifications (in-app, e-mail, push) and teacher remarks
 
-### 👩‍🏫 For teachers
+### For teachers
 - Create classes and enroll students
 - Upload and organize learning materials (folders, PDFs, links, video)
 - Create homework assignments with deadlines and point values
@@ -38,7 +38,7 @@ A modern educational platform designed as an improved alternative to the Bulgari
 - Record grades, absences and remarks
 - Message an individual student or parent, or post to the class feed
 
-### 👨‍👩‍👧 For parents
+### For parents
 - Track their child's grades, absences and remarks
 - Notifications on new grades, absences or teacher messages
 - Direct communication with teachers
@@ -68,7 +68,7 @@ A modern educational platform designed as an improved alternative to the Bulgari
 | CI/CD | GitHub Actions → GHCR | Build, test, images |
 | Testing | xUnit + Testcontainers + Playwright | Unit, integration, E2E |
 
-📄 Full rationale for every choice is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#1-technology-choices--rationale).
+Full rationale for every choice is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#1-technology-choices--rationale).
 
 ---
 
@@ -157,7 +157,7 @@ Jwt__Key=<generated 256-bit key>
 Anthropic__ApiKey=<key from console.anthropic.com>
 ```
 
-> ⚠️ The `ANTHROPIC_API_KEY` **never** reaches the frontend. Angular only calls our own backend; the backend calls the Claude API.
+>  The `ANTHROPIC_API_KEY` **never** reaches the frontend. Angular only calls our own backend; the backend calls the Claude API.
 
 ---
 
