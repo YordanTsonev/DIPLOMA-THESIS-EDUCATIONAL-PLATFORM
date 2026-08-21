@@ -1,0 +1,51 @@
+# ---- .NET ----
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+artifacts/
+TestResults/
+coverage/
+*.coverage
+*.trx
+
+# ---- Node / Angular ----
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ---- Rider / VS Code ----
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# ---- Environment & secrets ----
+.env
+.env.local
+.env.*.local
+appsettings.Local.json
+appsettings.*.Local.json
+*.pfx
+*.key
+
+# ---- Docker / local data ----
+.data/
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Playwright ----
+playwright-report/
+test-results/
+blob-report/

@@ -50,9 +50,9 @@ A modern educational platform designed as an improved alternative to the Bulgari
 
 | Layer | Technology | Role |
 |---|---|---|
-| Frontend | **Angular 20** + Angular Material, NgRx Signals | SPA, state management |
-| Backend | **ASP.NET Core 9** Web API (modular monolith) | REST API, business logic |
-| ORM | **EF Core 9** + Npgsql | Data access, migrations |
+| Frontend | **Angular 22** + Angular Material, NgRx Signals | SPA, state management |
+| Backend | **ASP.NET Core 10** Web API (modular monolith) | REST API, business logic |
+| ORM | **EF Core 10** + Npgsql | Data access, migrations |
 | Database | **PostgreSQL 17** + `pgvector` | Relational data + vector search |
 | Cache | **Redis** | Sessions, caching, SignalR backplane |
 | Real-time | **SignalR** | Notifications, class feed, test synchronization |
@@ -66,9 +66,9 @@ A modern educational platform designed as an improved alternative to the Bulgari
 | Containerization | **Docker** / Docker Compose | Local environment |
 | Orchestration | **Kubernetes** + Helm | Production deployment |
 | CI/CD | GitHub Actions → GHCR | Build, test, images |
-| Testing | xUnit + Testcontainers + Playwright | Unit, integration, E2E |
+| Testing | xUnit + Shouldly + Testcontainers + Playwright | Unit, integration, E2E |
 
-Full rationale for every choice is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#1-technology-choices--rationale).
+Full rationale for every choice is in [docs-architecture/ARCHITECTURE.md](docs-architecture/ARCHITECTURE.md#1-technology-choices--rationale).
 
 ---
 
@@ -88,14 +88,14 @@ ASP.NET Core API ──► PostgreSQL 17 (+pgvector)
 
 Modules: `Identity` · `SchoolStructure` · `Schedule` · `Content` · `Assignments` · `Assessment` · `Gradebook` · `Communication` · `Intelligence` · `Analytics`
 
-📄 Diagrams, module boundaries and the data model: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+📄 Diagrams, module boundaries and the data model: [docs-architecture/ARCHITECTURE.md](docs-architecture/ARCHITECTURE.md)
 
 ---
 
 ## Getting started
 
 ### Prerequisites
-- [.NET SDK 9](https://dotnet.microsoft.com/download)
+- [.NET SDK 10](https://dotnet.microsoft.com/download)
 - [Node.js 22+](https://nodejs.org) and `npm`
 - [Docker Desktop](https://www.docker.com/products/docker-desktop) (enable Kubernetes for the deployment stage)
 
@@ -135,7 +135,7 @@ App: `http://localhost:4200`
 |---|---|---|
 | Angular | http://localhost:4200 | — |
 | API | https://localhost:5001 | — |
-| PostgreSQL | localhost:5432 | `eduplatform` / `dev` |
+| PostgreSQL | localhost:5433 | `eduplatform` / `dev` |
 | MinIO console | http://localhost:9001 | `minioadmin` / `minioadmin` |
 | Mailpit (e-mail) | http://localhost:8025 | — |
 | Seq (logs) | http://localhost:5341 | — |
@@ -164,9 +164,8 @@ Anthropic__ApiKey=<key from console.anthropic.com>
 ## Repository layout
 
 ```
-├── docs/                       Documentation
-│   ├── ARCHITECTURE.md         Architecture, data model, API
-│   └── ROADMAP.md              Phased development plan
+├── docs-architecture/          Documentation
+│   └── ARCHITECTURE.md         Architecture, data model, API
 ├── src/
 │   ├── EduPlatform.Api/        Host: DI, middleware, endpoints, SignalR hubs
 │   ├── EduPlatform.Modules.*/  Business modules
@@ -201,7 +200,7 @@ Integration tests spin up a real PostgreSQL container via Testcontainers — no 
 
 ## Development plan
 
-The work is split into **10 phases plus the defense**, spanning the 2026/2027 academic year — from infrastructure to a finished product running on Kubernetes. See [docs/ROADMAP.md](docs/ROADMAP.md).
+The work is split into **10 phases plus the defense**, spanning the 2026/2027 academic year — from infrastructure to a finished product running on Kubernetes. The phase breakdown is tracked separately.
 
 ---
 

@@ -1,0 +1,105 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{json,yml,yaml,js,ts,html,scss,css,md}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{csproj,props,targets,slnx,xml}]
+indent_size = 2
+
+[Makefile]
+indent_style = tab
+
+# ---------------------------------------------------------------------------
+# C#
+# ---------------------------------------------------------------------------
+[*.cs]
+indent_size = 4
+
+# --- using directives ---
+csharp_using_directive_placement = outside_namespace:warning
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+# --- language preferences ---
+csharp_style_namespace_declarations = file_scoped:warning
+csharp_prefer_braces = true:warning
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+csharp_style_expression_bodied_properties = true:suggestion
+csharp_style_prefer_primary_constructors = true:suggestion
+csharp_style_prefer_pattern_matching = true:suggestion
+csharp_style_prefer_switch_expression = true:suggestion
+csharp_prefer_simple_using_statement = true:suggestion
+csharp_style_prefer_range_operator = true:suggestion
+csharp_style_prefer_index_operator = true:suggestion
+csharp_style_throw_expression = true:suggestion
+csharp_style_prefer_null_check_over_type_check = true:suggestion
+csharp_style_prefer_collection_expression = when_types_loosely_match:suggestion
+
+dotnet_style_qualification_for_field = false:warning
+dotnet_style_qualification_for_property = false:warning
+dotnet_style_qualification_for_method = false:warning
+dotnet_style_qualification_for_event = false:warning
+dotnet_style_object_initializer = true:suggestion
+dotnet_style_collection_initializer = true:suggestion
+dotnet_style_coalesce_expression = true:suggestion
+dotnet_style_null_propagation = true:suggestion
+dotnet_style_prefer_conditional_expression_over_assignment = true:silent
+dotnet_style_prefer_conditional_expression_over_return = true:silent
+dotnet_style_readonly_field = true:warning
+
+# --- naming: private fields are _camelCase ---
+dotnet_naming_rule.private_fields_underscore.severity = warning
+dotnet_naming_rule.private_fields_underscore.symbols = private_fields
+dotnet_naming_rule.private_fields_underscore.style = underscore_camel_case
+
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+dotnet_naming_symbols.private_fields.required_modifiers =
+
+dotnet_naming_style.underscore_camel_case.capitalization = camel_case
+dotnet_naming_style.underscore_camel_case.required_prefix = _
+
+# --- naming: interfaces start with I ---
+dotnet_naming_rule.interfaces_prefixed.severity = warning
+dotnet_naming_rule.interfaces_prefixed.symbols = interfaces
+dotnet_naming_rule.interfaces_prefixed.style = prefixed_with_i
+
+dotnet_naming_symbols.interfaces.applicable_kinds = interface
+dotnet_naming_style.prefixed_with_i.capitalization = pascal_case
+dotnet_naming_style.prefixed_with_i.required_prefix = I
+
+# --- analyzer adjustments ---
+
+# CA1711: flags any type ending in "EventHandler" because that suffix is reserved for
+# delegates. IDomainEventHandler<T> is the standard DDD name for this role and is not a
+# delegate; renaming it would make the codebase harder to read, not easier.
+dotnet_diagnostic.CA1711.severity = none
+
+# CA1848: LoggerMessage source generators are used on hot paths; elsewhere the readability
+# of a plain logger call is worth more than the allocation it saves.
+dotnet_diagnostic.CA1848.severity = none
+
+# CA1062: nullable reference types already express which arguments may be null.
+dotnet_diagnostic.CA1062.severity = none
+
+# ---------------------------------------------------------------------------
+# Tests: relaxed rules that do not apply to test code
+# ---------------------------------------------------------------------------
+[tests/**/*.cs]
+# CA1707: test method names read better as Should_do_x_when_y.
+dotnet_diagnostic.CA1707.severity = none
+# CA1515: test classes are public by xUnit convention.
+dotnet_diagnostic.CA1515.severity = none
