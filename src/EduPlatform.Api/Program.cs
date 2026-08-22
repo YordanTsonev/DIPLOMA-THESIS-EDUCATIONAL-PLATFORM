@@ -6,6 +6,7 @@ using EduPlatform.BuildingBlocks.Application;
 using EduPlatform.BuildingBlocks.Events;
 using EduPlatform.BuildingBlocks.Infrastructure;
 using EduPlatform.BuildingBlocks.Infrastructure.Seeding;
+using EduPlatform.Modules.Identity.Infrastructure;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Scalar.AspNetCore;
@@ -46,7 +47,7 @@ try
     builder.Services.AddDomainEvents();
 
     // ---- Modules -----------------------------------------------------------------
-    // Each module registers itself here as it is implemented (Identity from Phase 1).
+    builder.Services.AddIdentityModule(configuration);
 
     // ---- Web -----------------------------------------------------------------------
     var corsOrigins = configuration
@@ -150,6 +151,12 @@ try
     }
 
     await app.RunAsync().ConfigureAwait(false);
+    return 0;
+}
+catch (HostAbortedException)
+{
+    // Thrown by design when "dotnet ef" builds the host to read the model. Not a failure,
+    // and logging it as fatal makes every migration command look like a crash.
     return 0;
 }
 catch (Exception exception)

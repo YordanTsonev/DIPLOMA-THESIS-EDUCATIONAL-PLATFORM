@@ -18,5 +18,6 @@
   <Folder Name="/tests/">
     <Project Path="tests/EduPlatform.Api.IntegrationTests/EduPlatform.Api.IntegrationTests.csproj" />
     <Project Path="tests/EduPlatform.ArchitectureTests/EduPlatform.ArchitectureTests.csproj" />
+    <Project Path="tests/EduPlatform.Modules.Identity.UnitTests/EduPlatform.Modules.Identity.UnitTests.csproj" />
   </Folder>
 </Solution>

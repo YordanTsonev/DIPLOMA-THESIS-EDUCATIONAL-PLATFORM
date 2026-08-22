@@ -108,11 +108,15 @@ docker compose up -d
 Starts PostgreSQL, Redis, MinIO, Mailpit and Seq. Wait until `docker compose ps` reports every
 service as `healthy` before continuing.
 
-> There is no database migration step yet. The modules define no entities before Phase 1, so there
-> is nothing to migrate — the schema is created by the extension script in
-> `deploy/docker/postgres/` when the volume is first initialised.
+### 2. Database schema
 
-### 2. Backend
+```bash
+dotnet ef database update --project src/Modules/Identity/EduPlatform.Modules.Identity.Infrastructure --startup-project src/EduPlatform.Api --context IdentityDbContext
+```
+
+Requires the EF Core CLI once: `dotnet tool install --global dotnet-ef`.
+
+### 3. Backend
 
 ```bash
 dotnet run --project src/EduPlatform.Api
@@ -121,7 +125,7 @@ dotnet run --project src/EduPlatform.Api
 Listens on `https://localhost:5001` and `http://localhost:5000`. Scalar UI opens automatically at
 `https://localhost:5001/scalar`.
 
-### 3. Frontend
+### 4. Frontend
 
 ```bash
 npm --prefix src/web install
@@ -134,16 +138,24 @@ npm --prefix src/web start
 App: `http://localhost:4200`. The dev server proxies `/api` and `/health` to `http://localhost:5000`,
 so the browser sees a single origin.
 
-### 4. Development data (optional)
+### 5. Development data
 
 ```bash
 dotnet run --project src/EduPlatform.Api -- --seed
 ```
 
 Populates the development data set and exits without serving traffic. Seeders are idempotent, so
-this is safe to re-run. No module registers a seeder before Phase 1, so today it reports
-`No data seeders are registered` and exits — the mechanism is wired, there is simply nothing to
-populate yet.
+this is safe to re-run. It creates one confirmed account per role:
+
+| E-mail | Role |
+|---|---|
+| `admin@eduplatform.local` | Admin |
+| `teacher@eduplatform.local` | Teacher |
+| `student@eduplatform.local` | Student |
+| `parent@eduplatform.local` | Parent |
+
+All four share the password `Parola123!`. These accounts exist only for local development and are
+never created outside it.
 
 ### Local endpoints
 
@@ -213,11 +225,12 @@ dotnet user-secrets set "Jwt:Key" "<generated 256-bit key>" --project src/EduPla
 │   │   ├── …Events/                Domain event dispatch
 │   │   └── …Infrastructure/        ModuleDbContext, EF interceptors, clock
 │   ├── Modules/
-│   │   └── Identity/               Domain · Application · Infrastructure · Contracts (Phase 1)
+│   │   └── Identity/               User aggregate, EF schema, migrations, seeder
 │   └── web/                        Angular application
 ├── tests/
-│   ├── EduPlatform.ArchitectureTests/    NetArchTest — module boundary rules
-│   └── EduPlatform.Api.IntegrationTests/ API pipeline + PostgreSQL via Testcontainers
+│   ├── EduPlatform.ArchitectureTests/          NetArchTest — module boundary rules
+│   ├── EduPlatform.Modules.Identity.UnitTests/ Identity domain rules
+│   └── EduPlatform.Api.IntegrationTests/       API pipeline + PostgreSQL via Testcontainers
 ├── deploy/
 │   └── docker/postgres/            Extension bootstrap script
 ├── .github/workflows/ci.yml        Build, test, dependency audit
@@ -246,6 +259,7 @@ npm --prefix src/web test -- --watch=false
 | API pipeline | 5 | The real request pipeline through `WebApplicationFactory`: routing, correlation id, Problem Details, liveness probe | no |
 | Database | 4 | A real PostgreSQL 17 server started by Testcontainers: connectivity, `pgvector` distance operator, `pg_trgm`, per-module schema isolation | **yes** |
 | Seeding | 4 | Seeder discovery through DI, execution order, and that an empty registration is valid | no |
+| Identity domain | 29 | The `User` aggregate: role changes, deactivation, refresh-token rotation and replay detection; `Email` and `PersonName` validation | no |
 | Frontend | 1 | Application bootstraps (Vitest, jsdom) | no |
 
 The database tests use the same `pgvector/pgvector:pg17` image as `docker-compose.yml`, so they
