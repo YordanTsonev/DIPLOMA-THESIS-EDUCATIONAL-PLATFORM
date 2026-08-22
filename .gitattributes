@@ -1,0 +1,22 @@
+# Normalise line endings for text, and keep Git's hands off binary files.
+* text=auto
+
+# Binary — must never have line endings rewritten, or the file is corrupted.
+*.pdf     binary
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.ico     binary
+*.woff    binary
+*.woff2   binary
+*.ttf     binary
+*.zip     binary
+*.docx    binary
+*.xlsx    binary
+*.pptx    binary
+
+# Shell scripts must keep LF even on Windows, or they fail inside Linux containers.
+*.sh      text eol=lf
+*.sql     text eol=lf
+Dockerfile text eol=lf

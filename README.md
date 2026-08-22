@@ -105,96 +105,151 @@ Modules: `Identity` · `SchoolStructure` · `Schedule` · `Content` · `Assignme
 docker compose up -d
 ```
 
-Starts PostgreSQL, Redis, MinIO, Mailpit and Seq.
+Starts PostgreSQL, Redis, MinIO, Mailpit and Seq. Wait until `docker compose ps` reports every
+service as `healthy` before continuing.
 
-### 2. Database
+> There is no database migration step yet. The modules define no entities before Phase 1, so there
+> is nothing to migrate — the schema is created by the extension script in
+> `deploy/docker/postgres/` when the volume is first initialised.
 
-```bash
-dotnet ef database update --project src/EduPlatform.Api
-```
-
-### 3. Backend
+### 2. Backend
 
 ```bash
 dotnet run --project src/EduPlatform.Api
 ```
 
-API: `https://localhost:5001` · Scalar UI: `https://localhost:5001/scalar`
+Listens on `https://localhost:5001` and `http://localhost:5000`. Scalar UI opens automatically at
+`https://localhost:5001/scalar`.
 
-### 4. Frontend
+### 3. Frontend
 
 ```bash
-npm --prefix src/web install && npm --prefix src/web start
+npm --prefix src/web install
 ```
 
-App: `http://localhost:4200`
+```bash
+npm --prefix src/web start
+```
+
+App: `http://localhost:4200`. The dev server proxies `/api` and `/health` to `http://localhost:5000`,
+so the browser sees a single origin.
+
+### 4. Development data (optional)
+
+```bash
+dotnet run --project src/EduPlatform.Api -- --seed
+```
+
+Populates the development data set and exits without serving traffic. Seeders are idempotent, so
+this is safe to re-run. No module registers a seeder before Phase 1, so today it reports
+`No data seeders are registered` and exits — the mechanism is wired, there is simply nothing to
+populate yet.
 
 ### Local endpoints
 
 | Service | Address | Credentials |
 |---|---|---|
 | Angular | http://localhost:4200 | — |
-| API | https://localhost:5001 | — |
-| PostgreSQL | localhost:5433 | `eduplatform` / `dev` |
+| API | https://localhost:5001 · http://localhost:5000 | — |
+| API docs (Scalar) | https://localhost:5001/scalar | — |
+| Health (readiness) | http://localhost:5000/health/ready | — |
+| PostgreSQL | localhost:**5433** | `eduplatform` / `dev` |
 | MinIO console | http://localhost:9001 | `minioadmin` / `minioadmin` |
 | Mailpit (e-mail) | http://localhost:8025 | — |
 | Seq (logs) | http://localhost:5341 | — |
+
+> PostgreSQL is published on **5433**, not the default 5432, because a locally installed PostgreSQL
+> service commonly already owns 5432. Change `POSTGRES_PORT` in `.env` if that does not apply to you.
 
 ---
 
 ## Configuration
 
-Copy `.env.example` to `.env` and fill in:
+Two separate files, with different jobs:
 
-```
-ConnectionStrings__Postgres=Host=localhost;Database=eduplatform;Username=eduplatform;Password=dev
-ConnectionStrings__Redis=localhost:6379
-Storage__Endpoint=localhost:9000
-Storage__AccessKey=minioadmin
-Storage__SecretKey=minioadmin
-Jwt__Issuer=https://localhost:5001
-Jwt__Key=<generated 256-bit key>
-Anthropic__ApiKey=<key from console.anthropic.com>
+**`.env`** — read by Docker Compose only. Copy it from the template; the defaults work as-is.
+
+```bash
+cp .env.example .env
 ```
 
->  The `ANTHROPIC_API_KEY` **never** reaches the frontend. Angular only calls our own backend; the backend calls the Claude API.
+**`src/EduPlatform.Api/appsettings.json`** — read by the API. It already points at the containers
+above, so no edit is needed to run locally:
+
+```
+ConnectionStrings:Postgres   Host=localhost;Port=5433;Database=eduplatform;…
+ConnectionStrings:Redis      localhost:6379
+Storage:Endpoint             localhost:9000
+Cors:AllowedOrigins          [ "http://localhost:4200" ]
+Serilog:WriteTo              Console + Seq at http://localhost:5341
+```
+
+Secrets arrive in later phases and belong in .NET User Secrets, never in `appsettings.json`:
+
+```bash
+dotnet user-secrets set "Jwt:Key" "<generated 256-bit key>" --project src/EduPlatform.Api
+```
+
+| Secret | Needed from | Purpose |
+|---|---|---|
+| `Jwt:Key` | Phase 1 | Signing key for access tokens |
+| `Anthropic:ApiKey` | Phase 8 | Claude API access |
+
+> The Claude API key **never** reaches the frontend. Angular only calls our own backend; the backend calls the Claude API.
 
 ---
 
 ## Repository layout
 
 ```
-├── docs-architecture/          Documentation
-│   └── ARCHITECTURE.md         Architecture, data model, API
+├── docs-architecture/              Documentation
+│   ├── ARCHITECTURE.md             Architecture, data model, API
+│   └── phase-0-report.pdf          What Phase 0 delivered and how
 ├── src/
-│   ├── EduPlatform.Api/        Host: DI, middleware, endpoints, SignalR hubs
-│   ├── EduPlatform.Modules.*/  Business modules
-│   ├── EduPlatform.BuildingBlocks.*/  Shared infrastructure
-│   └── web/                    Angular application
+│   ├── EduPlatform.Api/            Host: DI, middleware, endpoints, health probes
+│   ├── BuildingBlocks/             Shared kernel
+│   │   ├── …Domain/                Entity, AggregateRoot, ValueObject, domain events
+│   │   ├── …Application/           CQRS dispatcher, validation & logging behaviours
+│   │   ├── …Events/                Domain event dispatch
+│   │   └── …Infrastructure/        ModuleDbContext, EF interceptors, clock
+│   ├── Modules/
+│   │   └── Identity/               Domain · Application · Infrastructure · Contracts (Phase 1)
+│   └── web/                        Angular application
 ├── tests/
-│   ├── *.UnitTests/
-│   ├── *.IntegrationTests/     Testcontainers (real PostgreSQL)
-│   └── EduPlatform.E2E/        Playwright
+│   ├── EduPlatform.ArchitectureTests/    NetArchTest — module boundary rules
+│   └── EduPlatform.Api.IntegrationTests/ API pipeline + PostgreSQL via Testcontainers
 ├── deploy/
-│   ├── helm/                   Helm chart
-│   └── k8s/                    Kubernetes manifests
-├── .github/workflows/          CI/CD
-└── docker-compose.yml
+│   └── docker/postgres/            Extension bootstrap script
+├── .github/workflows/ci.yml        Build, test, dependency audit
+├── docker-compose.yml
+├── Directory.Build.props           Shared build settings
+└── Directory.Packages.props        Central package versions
 ```
+
+`deploy/helm/` and `deploy/k8s/` arrive in Phase 9; there is no Playwright project before Phase 9 either.
 
 ---
 
 ## Testing
 
 ```bash
-dotnet test
+dotnet test EduPlatform.slnx
 ```
 
 ```bash
-npm --prefix src/web test
+npm --prefix src/web test -- --watch=false
 ```
 
-Integration tests spin up a real PostgreSQL container via Testcontainers — no in-memory substitutes, so behaviour matches production.
+| Suite | Count | What it covers | Needs Docker |
+|---|:--:|---|:--:|
+| Architecture | 5 | Module boundaries enforced mechanically with NetArchTest — a violation fails the build | no |
+| API pipeline | 5 | The real request pipeline through `WebApplicationFactory`: routing, correlation id, Problem Details, liveness probe | no |
+| Database | 4 | A real PostgreSQL 17 server started by Testcontainers: connectivity, `pgvector` distance operator, `pg_trgm`, per-module schema isolation | **yes** |
+| Seeding | 4 | Seeder discovery through DI, execution order, and that an empty registration is valid | no |
+| Frontend | 1 | Application bootstraps (Vitest, jsdom) | no |
+
+The database tests use the same `pgvector/pgvector:pg17` image as `docker-compose.yml`, so they
+exercise the extensions the application actually depends on. No in-memory database substitute is used.
 
 ---
 
