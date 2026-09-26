@@ -31,7 +31,6 @@ internal sealed class ValidationBehaviour<TMessage, TResult>(
         var failures = results.SelectMany(result => result.Errors).Where(failure => failure is not null).ToArray();
         if (failures.Length > 0)
         {
-            // Translated into an RFC 9457 problem document by the API's exception handler.
             throw new ValidationException(failures);
         }
 

@@ -15,10 +15,6 @@ public interface IQueryHandler<in TQuery, TResult>
     Task<TResult> HandleAsync(TQuery query, CancellationToken cancellationToken);
 }
 
-/// <summary>
-/// Base class for handlers of commands that return nothing, so implementers
-/// override a plain <c>Task</c> method instead of returning <see cref="Unit"/> by hand.
-/// </summary>
 public abstract class CommandHandler<TCommand> : ICommandHandler<TCommand>
     where TCommand : ICommand
 {
