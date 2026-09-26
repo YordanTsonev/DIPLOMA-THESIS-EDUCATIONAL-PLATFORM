@@ -1,0 +1,163 @@
+<section class="ep-card">
+  <h1>Потребители</h1>
+
+  @if (error(); as message) {
+    <p class="ep-alert is-error" role="alert">{{ message }}</p>
+  }
+  @if (notice(); as message) {
+    <p class="ep-alert is-success" role="status">{{ message }}</p>
+  }
+
+  <form class="filters" [formGroup]="filters" (ngSubmit)="load()">
+    <div class="ep-field">
+      <label for="search">Търсене</label>
+      <input id="search" formControlName="search" placeholder="име или адрес" />
+    </div>
+
+    <div class="ep-field">
+      <label for="roleFilter">Роля</label>
+      <select id="roleFilter" formControlName="role">
+        <option value="">всички</option>
+        @for (role of roles; track role) {
+          <option [value]="role">{{ role }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="ep-field">
+      <label for="activeFilter">Състояние</label>
+      <select id="activeFilter" formControlName="isActive">
+        <option value="">всички</option>
+        <option value="true">активни</option>
+        <option value="false">деактивирани</option>
+      </select>
+    </div>
+
+    <button class="ep-button" type="submit" [disabled]="loading()">Филтриране</button>
+  </form>
+
+  @if (loading()) {
+    <p class="ep-muted">Зареждане…</p>
+  } @else if (result(); as page) {
+    @if (page.items.length === 0) {
+      <p class="ep-muted">Няма потребители, отговарящи на филтъра.</p>
+    } @else {
+      <div class="table-scroll">
+        <table>
+          <caption class="sr-only">Списък с потребители</caption>
+          <thead>
+            <tr>
+              <th scope="col">Име</th>
+              <th scope="col">Електронна поща</th>
+              <th scope="col">Роля</th>
+              <th scope="col">Състояние</th>
+              <th scope="col">Създаден</th>
+              <th scope="col">Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of page.items; track user.id) {
+              <tr [class.is-inactive]="!user.isActive">
+                <td>{{ user.fullName }}</td>
+                <td>{{ user.email }}</td>
+                <td>
+                  <select
+                    [value]="user.role"
+                    (change)="changeRole(user, $any($event.target).value)"
+                    [attr.aria-label]="'Роля на ' + user.fullName"
+                  >
+                    @for (role of roles; track role) {
+                      <option [value]="role">{{ role }}</option>
+                    }
+                  </select>
+                </td>
+                <td>
+                  @if (user.isActive) {
+                    <span class="badge is-ok">активен</span>
+                  } @else {
+                    <span class="badge">деактивиран</span>
+                  }
+                  @if (!user.emailConfirmed) {
+                    <span class="badge is-warn">непотвърден</span>
+                  }
+                </td>
+                <td>{{ user.createdAt | date: 'shortDate' }}</td>
+                <td>
+                  <button
+                    class="ep-button ep-button-secondary"
+                    type="button"
+                    (click)="toggleActive(user)"
+                  >
+                    {{ user.isActive ? 'Деактивиране' : 'Активиране' }}
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pager">
+        <button
+          class="ep-button ep-button-secondary"
+          type="button"
+          [disabled]="page.page <= 1"
+          (click)="load(page.page - 1)"
+        >
+          Предишна
+        </button>
+        <span class="ep-muted">Страница {{ page.page }} от {{ page.totalPages || 1 }}</span>
+        <button
+          class="ep-button ep-button-secondary"
+          type="button"
+          [disabled]="page.page >= page.totalPages"
+          (click)="load(page.page + 1)"
+        >
+          Следваща
+        </button>
+      </div>
+    }
+  }
+</section>
+
+<section class="ep-card">
+  <h2>Нов акаунт</h2>
+  <p class="ep-muted">Учителските и административните акаунти се създават само оттук.</p>
+
+  <form [formGroup]="createForm" (ngSubmit)="createUser()" novalidate>
+    <div class="create-grid">
+      <div class="ep-field">
+        <label for="newFirstName">Име</label>
+        <input id="newFirstName" formControlName="firstName" />
+      </div>
+      <div class="ep-field">
+        <label for="newMiddleName">Бащино име</label>
+        <input id="newMiddleName" formControlName="middleName" />
+      </div>
+      <div class="ep-field">
+        <label for="newLastName">Фамилия</label>
+        <input id="newLastName" formControlName="lastName" />
+      </div>
+      <div class="ep-field">
+        <label for="newEmail">Електронна поща</label>
+        <input id="newEmail" type="email" formControlName="email" />
+      </div>
+      <div class="ep-field">
+        <label for="newPassword">Начална парола</label>
+        <input id="newPassword" type="password" formControlName="password" autocomplete="new-password" />
+      </div>
+      <div class="ep-field">
+        <label for="newRole">Роля</label>
+        <select id="newRole" formControlName="role">
+          @for (role of roles; track role) {
+            <option [value]="role">{{ role }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <button class="ep-button" type="submit" [disabled]="creating()">
+      {{ creating() ? 'Създаване…' : 'Създаване' }}
+    </button>
+  </form>
+</section>

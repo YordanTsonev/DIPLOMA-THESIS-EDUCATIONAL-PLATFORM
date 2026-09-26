@@ -1,0 +1,76 @@
+<div class="shell ep-card">
+  @if (done()) {
+    <h1>Проверете пощата си</h1>
+    <p class="subtitle ep-muted">
+      Изпратихме ви писмо с връзка за потвърждение. Отворете я, за да активирате акаунта си.
+    </p>
+    <div class="links">
+      <a routerLink="/auth/login">Към входа</a>
+    </div>
+  } @else {
+    <h1>Създаване на акаунт</h1>
+    <p class="subtitle ep-muted">Регистрацията е за ученици и родители.</p>
+
+    @if (error(); as message) {
+      <p class="ep-alert is-error" role="alert">{{ message }}</p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="name-row">
+        <div class="ep-field">
+          <label for="firstName">Име</label>
+          <input id="firstName" formControlName="firstName" autocomplete="given-name" />
+        </div>
+        <div class="ep-field">
+          <label for="middleName">Бащино име</label>
+          <input id="middleName" formControlName="middleName" autocomplete="additional-name" />
+        </div>
+      </div>
+
+      <div class="ep-field">
+        <label for="lastName">Фамилия</label>
+        <input id="lastName" formControlName="lastName" autocomplete="family-name" />
+      </div>
+
+      <div class="ep-field">
+        <label for="email">Електронна поща</label>
+        <input id="email" type="email" formControlName="email" autocomplete="email" />
+        @if (form.controls.email.touched && form.controls.email.invalid) {
+          <span class="ep-field-error">Въведете валиден адрес.</span>
+        }
+      </div>
+
+      <div class="ep-field">
+        <label for="password">Парола</label>
+        <input
+          id="password"
+          type="password"
+          formControlName="password"
+          autocomplete="new-password"
+        />
+        <span class="ep-field-error" [class.ep-muted]="form.controls.password.untouched">
+          Поне 10 знака, с буква и цифра.
+        </span>
+      </div>
+
+      <div class="ep-field">
+        <label for="role">Регистрирам се като</label>
+        <select id="role" formControlName="role">
+          @for (option of roles; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="actions">
+        <button class="ep-button" type="submit" [disabled]="busy()">
+          {{ busy() ? 'Създаване…' : 'Създаване на акаунт' }}
+        </button>
+      </div>
+    </form>
+
+    <div class="links">
+      <a routerLink="/auth/login">Вече имам акаунт</a>
+    </div>
+  }
+</div>

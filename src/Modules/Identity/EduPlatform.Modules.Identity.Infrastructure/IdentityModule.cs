@@ -1,6 +1,10 @@
+using EduPlatform.BuildingBlocks.Application;
 using EduPlatform.BuildingBlocks.Infrastructure.Persistence;
 using EduPlatform.BuildingBlocks.Infrastructure.Seeding;
+using EduPlatform.Modules.Identity.Application;
 using EduPlatform.Modules.Identity.Application.Abstractions;
+using EduPlatform.Modules.Identity.Contracts;
+using EduPlatform.Modules.Identity.Infrastructure.Mail;
 using EduPlatform.Modules.Identity.Infrastructure.Persistence;
 using EduPlatform.Modules.Identity.Infrastructure.Security;
 using EduPlatform.Modules.Identity.Infrastructure.Seeding;
@@ -33,7 +37,39 @@ public static class IdentityModule
             .UseSnakeCaseNamingConvention()
             .AddInterceptors(provider.GetRequiredService<PublishDomainEventsInterceptor>()));
 
+        // ---- Options ----------------------------------------------------------------
+        services.AddOptions<IdentitySettings>()
+            .Bind(configuration.GetSection(IdentitySettings.SectionName));
+
+        services.AddOptions<SmtpOptions>()
+            .Bind(configuration.GetSection(SmtpOptions.SectionName));
+
+        // Validated on start-up: an API running without a signing key would accept nobody,
+        // and it should refuse to start rather than fail every sign-in at runtime.
+        services.AddOptions<JwtOptions>()
+            .Bind(configuration.GetSection(JwtOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        // ---- Use cases --------------------------------------------------------------
+        services.AddHandlersFromAssembly(typeof(IdentitySettings).Assembly);
+
+        // ---- Persistence ------------------------------------------------------------
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IUserReadStore, UserReadStore>();
+        services.AddScoped<IUserDirectory, UserReadStore>();
+        services.AddScoped<IAuditLog, AuditLog>();
+
+        // ---- Security ---------------------------------------------------------------
+        services.AddHttpContextAccessor();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
+        services.AddSingleton<ITokenHasher, Sha256TokenHasher>();
+        services.AddScoped<IAccessTokenIssuer, JwtAccessTokenIssuer>();
+        services.AddScoped<ICurrentUser, CurrentUser>();
+
+        // ---- Mail -------------------------------------------------------------------
+        services.AddScoped<IEmailSender, MailKitEmailSender>();
+
         services.AddScoped<IDataSeeder, IdentitySeeder>();
 
         return services;

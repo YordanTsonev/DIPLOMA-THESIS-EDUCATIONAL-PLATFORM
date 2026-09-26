@@ -1,0 +1,19 @@
+<div class="shell ep-card">
+  @switch (state()) {
+    @case ('working') {
+      <h1>Потвърждаване…</h1>
+      <p class="subtitle ep-muted">Един момент.</p>
+    }
+    @case ('confirmed') {
+      <h1>Адресът е потвърден</h1>
+      <p class="subtitle ep-muted">Вече можете да влезете в акаунта си.</p>
+      <div class="links"><a routerLink="/auth/login">Към входа</a></div>
+    }
+    @case ('failed') {
+      <h1>Връзката не е валидна</h1>
+      <p class="ep-alert is-error" role="alert">{{ error() }}</p>
+      <p class="subtitle ep-muted">Възможно е връзката вече да е използвана или да е изтекла.</p>
+      <div class="links"><a routerLink="/auth/login">Към входа</a></div>
+    }
+  }
+</div>

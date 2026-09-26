@@ -13,15 +13,18 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.ToTable("users");
         builder.HasKey(user => user.Id);
 
-        // Email is a value object but maps to a single column: it is the login identifier and
-        // needs a unique index, which a separate owned table would make awkward.
-        builder.Property(user => user.Email)
-            .HasConversion(email => email.Value, value => Email.Create(value))
+        builder.Property(user => user.EmailAddress)
             .HasColumnName("email")
             .HasMaxLength(Email.MaxLength)
             .IsRequired();
 
-        builder.HasIndex(user => user.Email).IsUnique();
+        // The value object is derived from the column, not stored separately.
+        builder.Ignore(user => user.Email);
+
+        // The login lookup and the uniqueness rule both run against this column.
+        builder.HasIndex(user => user.EmailAddress)
+            .HasDatabaseName("ix_users_email")
+            .IsUnique();
 
         builder.ComplexProperty(user => user.Name, name =>
         {
@@ -45,7 +48,13 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
             .HasForeignKey(token => token.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.HasMany(user => user.SecurityTokens)
+            .WithOne()
+            .HasForeignKey(token => token.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.Navigation(user => user.RefreshTokens).UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder.Navigation(user => user.SecurityTokens).UsePropertyAccessMode(PropertyAccessMode.Field);
 
         builder.Ignore(user => user.DomainEvents);
     }

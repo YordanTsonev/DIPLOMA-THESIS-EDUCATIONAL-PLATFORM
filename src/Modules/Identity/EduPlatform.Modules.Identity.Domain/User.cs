@@ -11,11 +11,12 @@ namespace EduPlatform.Modules.Identity.Domain;
 public sealed class User : AggregateRoot
 {
     private readonly List<RefreshToken> _refreshTokens = [];
+    private readonly List<UserSecurityToken> _securityTokens = [];
 
     private User(Guid id, Email email, PersonName name, string passwordHash, UserRole role)
         : base(id)
     {
-        Email = email;
+        EmailAddress = email.Value;
         Name = name;
         PasswordHash = passwordHash;
         Role = role;
@@ -25,7 +26,19 @@ public sealed class User : AggregateRoot
     /// <summary>Required by EF Core materialisation.</summary>
     private User() { }
 
-    public Email Email { get; private set; } = null!;
+    /// <summary>
+    /// The stored form of the address, mapped straight to the column.
+    /// </summary>
+    /// <remarks>
+    /// The value object cannot be the mapped property. Stored through a value converter it is
+    /// opaque to the provider, so neither a partial-match search nor a lookup by address can be
+    /// translated to SQL. Keeping the string as the mapped property and deriving
+    /// <see cref="Email"/> from it gives the domain its type and the database a plain column.
+    /// </remarks>
+    public string EmailAddress { get; private set; } = null!;
+
+    /// <summary>The address as a validated value object.</summary>
+    public Email Email => Email.Create(EmailAddress);
 
     public PersonName Name { get; private set; } = null!;
 
@@ -46,6 +59,9 @@ public sealed class User : AggregateRoot
 
     /// <summary>Issued sessions, including revoked ones — the history is what detects token theft.</summary>
     public IReadOnlyCollection<RefreshToken> RefreshTokens => _refreshTokens.AsReadOnly();
+
+    /// <summary>E-mail confirmation and password-reset tokens, including spent ones.</summary>
+    public IReadOnlyCollection<UserSecurityToken> SecurityTokens => _securityTokens.AsReadOnly();
 
     public static User Register(Email email, PersonName name, string passwordHash, UserRole role)
     {
@@ -191,5 +207,52 @@ public sealed class User : AggregateRoot
         {
             token.Revoke(reason);
         }
+    }
+
+    /// <summary>
+    /// Issues a single-use token for an e-mailed link. Any earlier token for the same purpose is
+    /// spent immediately, so requesting a second password-reset mail invalidates the first link.
+    /// </summary>
+    public UserSecurityToken IssueSecurityToken(UserTokenPurpose purpose, string tokenHash, DateTimeOffset expiresAt)
+    {
+        foreach (var outstanding in _securityTokens.Where(token => token.Purpose == purpose && !token.IsConsumed))
+        {
+            outstanding.Consume();
+        }
+
+        var token = UserSecurityToken.Issue(Id, purpose, tokenHash, expiresAt);
+        _securityTokens.Add(token);
+        return token;
+    }
+
+    /// <summary>Spends a token, refusing one that is unknown, already used or expired.</summary>
+    public UserSecurityToken ConsumeSecurityToken(UserTokenPurpose purpose, string tokenHash, DateTimeOffset now)
+    {
+        var token = _securityTokens.SingleOrDefault(
+                candidate => candidate.Purpose == purpose && candidate.TokenHash == tokenHash)
+            ?? throw new DomainException("This link is not valid.");
+
+        if (token.IsConsumed)
+        {
+            throw new DomainException("This link has already been used.");
+        }
+
+        if (token.HasExpired(now))
+        {
+            throw new DomainException("This link has expired. Request a new one.");
+        }
+
+        token.Consume();
+        return token;
+    }
+
+    /// <summary>
+    /// Sets a new password from a reset link. Separate from <see cref="ChangePassword"/> because
+    /// a reset also confirms the address: the link could only have been read from that mailbox.
+    /// </summary>
+    public void ResetPassword(string newPasswordHash)
+    {
+        ChangePassword(newPasswordHash);
+        ConfirmEmail();
     }
 }

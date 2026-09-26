@@ -16,5 +16,9 @@ public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> option
 
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
+    public DbSet<UserSecurityToken> UserTokens => Set<UserSecurityToken>();
+
+    public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
+
     protected override string Schema => SchemaName;
 }

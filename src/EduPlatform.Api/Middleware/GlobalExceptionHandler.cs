@@ -32,6 +32,16 @@ internal sealed partial class GlobalExceptionHandler(
                 Title = "The request conflicts with the current state.",
                 Detail = domain.Message,
             },
+
+            // A body that is not valid JSON, or that names a value an enum does not define, is
+            // the caller's mistake. Reporting it as 500 would blame the server and hide a typo
+            // the client can fix.
+            BadHttpRequestException badRequest => new ProblemDetails
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "The request body could not be read.",
+                Detail = badRequest.Message,
+            },
             _ => new ProblemDetails
             {
                 Status = StatusCodes.Status500InternalServerError,

@@ -1,0 +1,26 @@
+<header class="topbar">
+  <div class="brand">EduPlatform</div>
+
+  <nav aria-label="Основна навигация">
+    @for (item of navigation(); track item.route) {
+      <a
+        [routerLink]="item.route"
+        routerLinkActive="is-active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        >{{ item.label }}</a
+      >
+    }
+  </nav>
+
+  <div class="account">
+    @if (user(); as current) {
+      <span class="name">{{ current.fullName }}</span>
+      <span class="role">{{ roleLabel() }}</span>
+    }
+    <button class="ep-button ep-button-secondary" type="button" (click)="signOut()">Изход</button>
+  </div>
+</header>
+
+<main>
+  <router-outlet />
+</main>

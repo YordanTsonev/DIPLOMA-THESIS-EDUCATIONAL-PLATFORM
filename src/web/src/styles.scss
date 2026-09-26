@@ -1,1 +1,111 @@
 /* You can add global styles to this file, and also import other style files */
+
+/* ---- Shared form and layout primitives -------------------------------------
+   Kept global rather than duplicated per component: every authentication screen
+   and the admin table share them, and they are the visual vocabulary the later
+   phases will extend. */
+
+:root {
+  --ep-surface: #ffffff;
+  --ep-ink: #1a1a1a;
+  --ep-muted: #5f6b7a;
+  --ep-line: #d8dee6;
+  --ep-accent: #1f4e79;
+  --ep-accent-ink: #ffffff;
+  --ep-danger: #b3261e;
+  --ep-danger-surface: #fdecea;
+  --ep-success: #1b5e20;
+  --ep-success-surface: #e8f5e9;
+  --ep-radius: 12px;
+}
+
+.ep-card {
+  background: var(--ep-surface);
+  border: 1px solid var(--ep-line);
+  border-radius: var(--ep-radius);
+  padding: 32px;
+}
+
+.ep-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+
+  label {
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  input,
+  select {
+    font: inherit;
+    padding: 10px 12px;
+    border: 1px solid var(--ep-line);
+    border-radius: 8px;
+    background: var(--ep-surface);
+    color: var(--ep-ink);
+
+    &:focus-visible {
+      outline: 2px solid var(--ep-accent);
+      outline-offset: 1px;
+    }
+
+    &[aria-invalid='true'] {
+      border-color: var(--ep-danger);
+    }
+  }
+}
+
+.ep-field-error {
+  font-size: 0.8125rem;
+  color: var(--ep-danger);
+}
+
+.ep-button {
+  font: inherit;
+  font-weight: 600;
+  padding: 11px 20px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--ep-accent);
+  color: var(--ep-accent-ink);
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ep-accent);
+    outline-offset: 2px;
+  }
+}
+
+.ep-button-secondary {
+  background: transparent;
+  color: var(--ep-accent);
+  border-color: var(--ep-line);
+}
+
+.ep-alert {
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  margin-bottom: 16px;
+
+  &.is-error {
+    background: var(--ep-danger-surface);
+    color: var(--ep-danger);
+  }
+
+  &.is-success {
+    background: var(--ep-success-surface);
+    color: var(--ep-success);
+  }
+}
+
+.ep-muted {
+  color: var(--ep-muted);
+}

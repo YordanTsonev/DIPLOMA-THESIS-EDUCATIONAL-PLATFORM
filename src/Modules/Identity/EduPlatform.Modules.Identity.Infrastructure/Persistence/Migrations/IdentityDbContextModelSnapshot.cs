@@ -24,6 +24,57 @@ namespace EduPlatform.Modules.Identity.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("EduPlatform.Modules.Identity.Domain.AuditEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("action");
+
+                    b.Property<Guid?>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<string>("Detail")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("detail");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("ip_address");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<Guid?>("SubjectUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("subject_user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_audit_log");
+
+                    b.HasIndex("Action")
+                        .HasDatabaseName("ix_audit_log_action");
+
+                    b.HasIndex("OccurredAt")
+                        .IsDescending()
+                        .HasDatabaseName("ix_audit_log_occurred_at");
+
+                    b.HasIndex("SubjectUserId")
+                        .HasDatabaseName("ix_audit_log_subject_user_id");
+
+                    b.ToTable("audit_log", "identity");
+                });
+
             modelBuilder.Entity("EduPlatform.Modules.Identity.Domain.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -160,6 +211,52 @@ namespace EduPlatform.Modules.Identity.Infrastructure.Persistence.Migrations
                     b.ToTable("users", "identity");
                 });
 
+            modelBuilder.Entity("EduPlatform.Modules.Identity.Domain.UserSecurityToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("ConsumedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("consumed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<int>("Purpose")
+                        .HasColumnType("integer")
+                        .HasColumnName("purpose");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("token_hash");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_user_tokens");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_user_tokens_user_id");
+
+                    b.HasIndex("Purpose", "TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_user_tokens_purpose_token_hash");
+
+                    b.ToTable("user_tokens", "identity");
+                });
+
             modelBuilder.Entity("EduPlatform.Modules.Identity.Domain.RefreshToken", b =>
                 {
                     b.HasOne("EduPlatform.Modules.Identity.Domain.User", null)
@@ -170,9 +267,21 @@ namespace EduPlatform.Modules.Identity.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_refresh_tokens_users_user_id");
                 });
 
+            modelBuilder.Entity("EduPlatform.Modules.Identity.Domain.UserSecurityToken", b =>
+                {
+                    b.HasOne("EduPlatform.Modules.Identity.Domain.User", null)
+                        .WithMany("SecurityTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_user_tokens_users_user_id");
+                });
+
             modelBuilder.Entity("EduPlatform.Modules.Identity.Domain.User", b =>
                 {
                     b.Navigation("RefreshTokens");
+
+                    b.Navigation("SecurityTokens");
                 });
 #pragma warning restore 612, 618
         }

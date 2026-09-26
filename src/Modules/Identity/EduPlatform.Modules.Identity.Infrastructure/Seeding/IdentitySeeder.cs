@@ -38,11 +38,11 @@ internal sealed class IdentitySeeder(
         };
 
         var existing = await dbContext.Users
-            .Select(user => user.Email)
+            .Select(user => user.EmailAddress)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        var existingEmails = existing.Select(email => email.Value).ToHashSet(StringComparer.Ordinal);
+        var existingEmails = existing.ToHashSet(StringComparer.Ordinal);
 
         // One hash for all four: PBKDF2 is deliberately slow, and hashing the same password
         // four times would add seconds to every seed run for no benefit.
