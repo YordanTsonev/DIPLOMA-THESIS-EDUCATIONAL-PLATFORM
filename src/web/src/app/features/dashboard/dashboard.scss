@@ -1,0 +1,56 @@
+:host {
+  display: grid;
+  gap: 20px;
+}
+
+h1 {
+  margin: 0 0 20px;
+  font-size: 1.5rem;
+}
+
+h2 {
+  margin: 0 0 4px;
+  font-size: 1.125rem;
+}
+
+.facts {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+
+  dt {
+    font-size: 0.8125rem;
+    color: var(--ep-muted);
+    margin-bottom: 2px;
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 600;
+  }
+}
+
+.upcoming ul {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.upcoming li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border: 1px solid var(--ep-line);
+  border-radius: 8px;
+}
+
+.phase {
+  font-size: 0.8125rem;
+  color: var(--ep-muted);
+  white-space: nowrap;
+}

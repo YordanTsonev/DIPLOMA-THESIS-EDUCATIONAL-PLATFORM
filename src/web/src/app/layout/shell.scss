@@ -1,0 +1,80 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #f4f6f8;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 12px 24px;
+  background: var(--ep-surface);
+  border-bottom: 1px solid var(--ep-line);
+  flex-wrap: wrap;
+}
+
+.brand {
+  font-weight: 700;
+  color: var(--ep-accent);
+  font-size: 1.0625rem;
+}
+
+nav {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+  flex-wrap: wrap;
+
+  a {
+    padding: 7px 12px;
+    border-radius: 8px;
+    color: var(--ep-ink);
+    text-decoration: none;
+    font-size: 0.9375rem;
+
+    &:hover {
+      background: #eef2f7;
+    }
+
+    &.is-active {
+      background: var(--ep-accent);
+      color: var(--ep-accent-ink);
+    }
+  }
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .name {
+    font-weight: 600;
+    font-size: 0.9375rem;
+  }
+
+  .role {
+    font-size: 0.8125rem;
+    color: var(--ep-muted);
+    padding: 3px 8px;
+    border: 1px solid var(--ep-line);
+    border-radius: 999px;
+  }
+}
+
+main {
+  flex: 1;
+  padding: 24px;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+@media (max-width: 640px) {
+  .account .name,
+  .account .role {
+    display: none;
+  }
+}

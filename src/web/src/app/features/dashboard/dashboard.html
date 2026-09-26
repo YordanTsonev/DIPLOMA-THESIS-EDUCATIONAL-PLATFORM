@@ -1,0 +1,27 @@
+<section class="ep-card">
+  <h1>{{ greeting() }}</h1>
+
+  @if (user(); as current) {
+    <dl class="facts">
+      <div><dt>Електронна поща</dt><dd>{{ current.email }}</dd></div>
+      <div><dt>Роля</dt><dd>{{ current.role }}</dd></div>
+      @if (current.lastSignedInAt; as lastSeen) {
+        <div><dt>Предишен вход</dt><dd>{{ lastSeen | date: 'medium' }}</dd></div>
+      }
+    </dl>
+  }
+</section>
+
+<section class="ep-card upcoming">
+  <h2>Предстои</h2>
+  <p class="ep-muted">Функционалностите по-долу се добавят в следващите етапи.</p>
+
+  <ul>
+    @for (item of upcoming(); track item.title) {
+      <li>
+        <span>{{ item.title }}</span>
+        <span class="phase">{{ item.phase }}</span>
+      </li>
+    }
+  </ul>
+</section>

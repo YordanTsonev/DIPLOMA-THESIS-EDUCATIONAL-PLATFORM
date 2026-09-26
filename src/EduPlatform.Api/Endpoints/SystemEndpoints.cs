@@ -11,7 +11,7 @@ internal static class SystemEndpoints
 {
     public static IEndpointRouteBuilder MapSystemEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        var group = endpoints.MapGroup("/api/v1/system").WithTags("System");
+        var group = endpoints.MapGroup("/api/v1/system").WithTags("System").AllowAnonymous();
 
         group.MapGet("/info", (IClock clock, IHostEnvironment environment) => Results.Ok(new SystemInfoResponse(
                 Application: "EduPlatform.Api",

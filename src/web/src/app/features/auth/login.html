@@ -1,0 +1,49 @@
+<div class="shell ep-card">
+  <h1>Вход</h1>
+  <p class="subtitle ep-muted">Въведете данните за своя акаунт.</p>
+
+  @if (error(); as message) {
+    <p class="ep-alert is-error" role="alert">{{ message }}</p>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="ep-field">
+      <label for="email">Електронна поща</label>
+      <input
+        id="email"
+        type="email"
+        formControlName="email"
+        autocomplete="username"
+        [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid"
+      />
+      @if (form.controls.email.touched && form.controls.email.invalid) {
+        <span class="ep-field-error">Въведете валиден адрес.</span>
+      }
+    </div>
+
+    <div class="ep-field">
+      <label for="password">Парола</label>
+      <input
+        id="password"
+        type="password"
+        formControlName="password"
+        autocomplete="current-password"
+        [attr.aria-invalid]="form.controls.password.touched && form.controls.password.invalid"
+      />
+      @if (form.controls.password.touched && form.controls.password.invalid) {
+        <span class="ep-field-error">Паролата е задължителна.</span>
+      }
+    </div>
+
+    <div class="actions">
+      <button class="ep-button" type="submit" [disabled]="busy()">
+        {{ busy() ? 'Влизане…' : 'Вход' }}
+      </button>
+    </div>
+  </form>
+
+  <div class="links">
+    <a routerLink="/auth/forgot-password">Забравена парола</a>
+    <a routerLink="/auth/register">Създаване на акаунт</a>
+  </div>
+</div>

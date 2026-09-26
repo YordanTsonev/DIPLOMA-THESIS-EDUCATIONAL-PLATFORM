@@ -1,4 +1,5 @@
 using EduPlatform.BuildingBlocks.Application.Abstractions;
+using EduPlatform.BuildingBlocks.Infrastructure.Persistence;
 using EduPlatform.BuildingBlocks.Infrastructure.Seeding;
 using EduPlatform.BuildingBlocks.Infrastructure.Time;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +16,10 @@ public static class InfrastructureServiceCollectionExtensions
         // Modules add their own IDataSeeder as they gain entities; the runner picks up whatever
         // is registered, so no module needs to be named here.
         services.TryAddScoped<DataSeedRunner>();
+
+        // Every module's DbContext adds this interceptor, so it is registered once here rather
+        // than repeated in each module.
+        services.TryAddScoped<PublishDomainEventsInterceptor>();
 
         return services;
     }
