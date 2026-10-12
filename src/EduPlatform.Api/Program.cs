@@ -8,6 +8,7 @@ using EduPlatform.BuildingBlocks.Events;
 using EduPlatform.BuildingBlocks.Infrastructure;
 using EduPlatform.BuildingBlocks.Infrastructure.Seeding;
 using EduPlatform.Modules.Identity.Infrastructure;
+using EduPlatform.Modules.SchoolStructure.Infrastructure;
 using EduPlatform.Modules.Identity.Infrastructure.Security;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -54,6 +55,7 @@ try
 
     // ---- Modules -----------------------------------------------------------------
     builder.Services.AddIdentityModule(configuration);
+    builder.Services.AddSchoolStructureModule(configuration);
 
     // ---- Authentication ------------------------------------------------------------
     var jwt = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
