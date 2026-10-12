@@ -1,5 +1,7 @@
 using EduPlatform.BuildingBlocks.Application;
 using EduPlatform.BuildingBlocks.Infrastructure.Persistence;
+using EduPlatform.BuildingBlocks.Infrastructure.Seeding;
+using EduPlatform.Modules.SchoolStructure.Infrastructure.Seeding;
 using EduPlatform.Modules.SchoolStructure.Application.Abstractions;
 using EduPlatform.Modules.SchoolStructure.Application.UseCases;
 using EduPlatform.Modules.SchoolStructure.Infrastructure.Persistence;
@@ -29,6 +31,7 @@ public static class SchoolStructureModule
         services.AddHandlersFromAssembly(typeof(ListSubjectsQuery).Assembly);
         services.AddScoped<ISchoolStructureRepository, SchoolStructureRepository>();
         services.AddScoped<ISchoolStructureReadStore, SchoolStructureReadStore>();
+        services.AddScoped<IDataSeeder, SchoolStructureSeeder>();
 
         return services;
     }

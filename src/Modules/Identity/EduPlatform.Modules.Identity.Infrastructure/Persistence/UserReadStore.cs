@@ -74,6 +74,18 @@ internal sealed class UserReadStore(IdentityDbContext dbContext) : IUserReadStor
         return user?.ToDto();
     }
 
+    public async Task<UserDto?> FindByEmailAsync(string email, CancellationToken cancellationToken = default)
+    {
+        var normalised = email?.Trim().ToLowerInvariant() ?? string.Empty;
+
+        var user = await dbContext.Users
+            .AsNoTracking()
+            .SingleOrDefaultAsync(candidate => candidate.EmailAddress == normalised, cancellationToken)
+            .ConfigureAwait(false);
+
+        return user?.ToDto();
+    }
+
     public async Task<IReadOnlyList<UserDto>> FindByIdsAsync(
         IReadOnlyCollection<Guid> userIds,
         CancellationToken cancellationToken = default)
