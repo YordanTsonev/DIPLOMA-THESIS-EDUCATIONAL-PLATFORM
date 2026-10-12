@@ -2,14 +2,6 @@ using EduPlatform.BuildingBlocks.Domain;
 
 namespace EduPlatform.Modules.Identity.Domain;
 
-/// <summary>
-/// One recorded security-relevant action.
-/// </summary>
-/// <remarks>
-/// Append-only by design: rows are never updated or deleted, which is what makes the log
-/// worth consulting after an incident. Sign-in failures are recorded alongside successes,
-/// because a burst of failures against one account is the signal worth seeing.
-/// </remarks>
 public sealed class AuditEntry : Entity
 {
     private AuditEntry(Guid? actorUserId, string action, Guid? subjectUserId, string? detail, string? ipAddress)

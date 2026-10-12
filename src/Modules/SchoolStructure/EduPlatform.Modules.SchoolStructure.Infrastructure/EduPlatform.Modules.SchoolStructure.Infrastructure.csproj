@@ -1,0 +1,6 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\EduPlatform.Modules.SchoolStructure.Application\EduPlatform.Modules.SchoolStructure.Application.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\EduPlatform.BuildingBlocks.Infrastructure\EduPlatform.BuildingBlocks.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>
