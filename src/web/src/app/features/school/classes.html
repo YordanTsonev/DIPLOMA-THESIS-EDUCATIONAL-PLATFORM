@@ -1,0 +1,104 @@
+<section class="ep-card">
+  <h1>Класове</h1>
+
+  @if (error(); as message) {
+    <p class="ep-alert is-error" role="alert">{{ message }}</p>
+  }
+
+  <form class="toolbar" [formGroup]="filter" (ngSubmit)="loadClasses()">
+    <div class="ep-field">
+      <label for="year">Учебна година</label>
+      <select id="year" formControlName="academicYearId" (change)="loadClasses()">
+        @for (year of years(); track year.id) {
+          <option [value]="year.id">{{ year.name }}{{ year.isCurrent ? ' (текуща)' : '' }}</option>
+        }
+      </select>
+    </div>
+  </form>
+
+  @if (loading()) {
+    <p class="ep-muted">Зареждане…</p>
+  } @else if (classes().length === 0) {
+    <p class="ep-muted">Няма класове за тази година.</p>
+  } @else {
+    <div class="class-grid">
+      @for (item of classes(); track item.id) {
+        <button
+          type="button"
+          class="class-card"
+          [class.is-selected]="selected()?.id === item.id"
+          (click)="select(item)"
+        >
+          <span class="class-name">{{ item.displayName }}</span>
+          <span class="class-meta">{{ item.studentCount }} ученика</span>
+          <span class="class-meta">{{ item.homeroomTeacherName ?? 'без класен' }}</span>
+        </button>
+      }
+    </div>
+  }
+</section>
+
+<section class="ep-card">
+  <h2>Нов клас</h2>
+  <form class="create-row" [formGroup]="createForm" (ngSubmit)="createClass()" novalidate>
+    <div class="ep-field">
+      <label for="grade">Клас</label>
+      <input id="grade" type="number" min="1" max="12" formControlName="grade" />
+    </div>
+    <div class="ep-field">
+      <label for="section">Паралелка</label>
+      <input id="section" formControlName="section" placeholder="А" maxlength="4" />
+    </div>
+    <button class="ep-button" type="submit">Създаване</button>
+  </form>
+</section>
+
+@if (selected(); as current) {
+  <section class="ep-card">
+    <h2>{{ current.displayName }} — ученици</h2>
+
+    @if (detailLoading()) {
+      <p class="ep-muted">Зареждане…</p>
+    } @else {
+      @if (assignments().length > 0) {
+        <ul class="subject-list">
+          @for (assignment of assignments(); track assignment.id) {
+            <li>
+              <span>{{ assignment.subjectName }}</span>
+              <span class="ep-muted">{{ assignment.teacherName }} · {{ assignment.weeklyHours }} ч/седм.</span>
+            </li>
+          }
+        </ul>
+      }
+
+      @if (students().length === 0) {
+        <p class="ep-muted">В този клас още няма записани ученици.</p>
+      } @else {
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Име</th>
+              <th scope="col">Електронна поща</th>
+              <th scope="col">Записан на</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (student of students(); track student.studentUserId) {
+              <tr>
+                <td>{{ student.fullName }}</td>
+                <td>{{ student.email }}</td>
+                <td>{{ student.enrolledAt | date: 'shortDate' }}</td>
+                <td>
+                  <button class="ep-button ep-button-secondary" type="button" (click)="withdraw(student)">
+                    Отписване
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    }
+  </section>
+}

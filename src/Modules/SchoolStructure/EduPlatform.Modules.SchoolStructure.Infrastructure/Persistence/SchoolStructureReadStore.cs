@@ -39,26 +39,30 @@ internal sealed class SchoolStructureReadStore(SchoolStructureDbContext dbContex
         Guid? academicYearId,
         CancellationToken cancellationToken = default)
     {
-        var query = from schoolClass in dbContext.SchoolClasses.AsNoTracking()
-                    join year in dbContext.AcademicYears.AsNoTracking()
-                        on schoolClass.AcademicYearId equals year.Id
-                    select new ClassRow(
-                        schoolClass.Id,
-                        schoolClass.AcademicYearId,
-                        year.Name,
-                        schoolClass.Grade,
-                        schoolClass.Section,
-                        schoolClass.HomeroomTeacherId,
-                        schoolClass.Enrollments.Count(enrollment => enrollment.WithdrawnAt == null));
+        var classes = dbContext.SchoolClasses.AsNoTracking();
 
         if (academicYearId is { } yearId)
         {
-            query = query.Where(row => row.AcademicYearId == yearId);
+            classes = classes.Where(schoolClass => schoolClass.AcademicYearId == yearId);
         }
 
-        var rows = await query
-            .OrderBy(row => row.Grade)
-            .ThenBy(row => row.Section)
+        var rows = await classes
+            .OrderBy(schoolClass => schoolClass.Grade)
+            .ThenBy(schoolClass => schoolClass.Section)
+            .Join(
+                dbContext.AcademicYears.AsNoTracking(),
+                schoolClass => schoolClass.AcademicYearId,
+                year => year.Id,
+                (schoolClass, year) => new
+                {
+                    schoolClass.Id,
+                    schoolClass.AcademicYearId,
+                    AcademicYearName = year.Name,
+                    schoolClass.Grade,
+                    schoolClass.Section,
+                    schoolClass.HomeroomTeacherId,
+                    StudentCount = schoolClass.Enrollments.Count(enrollment => enrollment.WithdrawnAt == null),
+                })
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
@@ -91,7 +95,7 @@ internal sealed class SchoolStructureReadStore(SchoolStructureDbContext dbContex
         var enrollments = await dbContext.ClassEnrollments
             .AsNoTracking()
             .Where(enrollment => enrollment.SchoolClassId == schoolClassId && enrollment.WithdrawnAt == null)
-            .Select(enrollment => new EnrollmentRow(enrollment.StudentUserId, enrollment.EnrolledAt))
+            .Select(enrollment => new { enrollment.StudentUserId, enrollment.EnrolledAt })
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
@@ -122,32 +126,39 @@ internal sealed class SchoolStructureReadStore(SchoolStructureDbContext dbContex
         Guid? teacherUserId,
         CancellationToken cancellationToken = default)
     {
-        var query = from assignment in dbContext.TeachingAssignments.AsNoTracking()
-                    join subject in dbContext.Subjects.AsNoTracking()
-                        on assignment.SubjectId equals subject.Id
-                    join schoolClass in dbContext.SchoolClasses.AsNoTracking()
-                        on assignment.SchoolClassId equals schoolClass.Id
-                    select new AssignmentRow(
-                        assignment.Id,
-                        assignment.TeacherUserId,
-                        assignment.SubjectId,
-                        subject.Name,
-                        assignment.SchoolClassId,
-                        schoolClass.Grade,
-                        schoolClass.Section,
-                        assignment.WeeklyHours);
+        var assignments = dbContext.TeachingAssignments.AsNoTracking();
 
         if (schoolClassId is { } classId)
         {
-            query = query.Where(row => row.SchoolClassId == classId);
+            assignments = assignments.Where(assignment => assignment.SchoolClassId == classId);
         }
 
         if (teacherUserId is { } teacherId)
         {
-            query = query.Where(row => row.TeacherUserId == teacherId);
+            assignments = assignments.Where(assignment => assignment.TeacherUserId == teacherId);
         }
 
-        var rows = await query
+        var rows = await assignments
+            .Join(
+                dbContext.Subjects.AsNoTracking(),
+                assignment => assignment.SubjectId,
+                subject => subject.Id,
+                (assignment, subject) => new { assignment, SubjectName = subject.Name })
+            .Join(
+                dbContext.SchoolClasses.AsNoTracking(),
+                row => row.assignment.SchoolClassId,
+                schoolClass => schoolClass.Id,
+                (row, schoolClass) => new
+                {
+                    row.assignment.Id,
+                    row.assignment.TeacherUserId,
+                    row.assignment.SubjectId,
+                    row.SubjectName,
+                    row.assignment.SchoolClassId,
+                    schoolClass.Grade,
+                    schoolClass.Section,
+                    row.assignment.WeeklyHours,
+                })
             .OrderBy(row => row.Grade)
             .ThenBy(row => row.Section)
             .ThenBy(row => row.SubjectName)
@@ -183,24 +194,6 @@ internal sealed class SchoolStructureReadStore(SchoolStructureDbContext dbContex
         return found.ToDictionary(user => user.Id, user => user.FullName);
     }
 
-    private sealed record ClassRow(
-        Guid Id,
-        Guid AcademicYearId,
-        string AcademicYearName,
-        int Grade,
-        string Section,
-        Guid? HomeroomTeacherId,
-        int StudentCount);
 
-    private sealed record EnrollmentRow(Guid StudentUserId, DateTimeOffset EnrolledAt);
 
-    private sealed record AssignmentRow(
-        Guid Id,
-        Guid TeacherUserId,
-        Guid SubjectId,
-        string SubjectName,
-        Guid SchoolClassId,
-        int Grade,
-        string Section,
-        int WeeklyHours);
 }

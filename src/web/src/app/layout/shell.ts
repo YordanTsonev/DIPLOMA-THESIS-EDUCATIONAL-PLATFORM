@@ -54,11 +54,15 @@ const ROLE_LABELS: Readonly<Record<UserRole, string>> = {
  */
 const NAVIGATION: Readonly<Record<UserRole, readonly NavItem[]>> = {
   [UserRole.Student]: [{ label: 'Начало', route: '/student' }],
-  [UserRole.Teacher]: [{ label: 'Начало', route: '/teacher' }],
+  [UserRole.Teacher]: [
+    { label: 'Начало', route: '/teacher' },
+    { label: 'Класове', route: '/teacher/classes' },
+  ],
   [UserRole.Parent]: [{ label: 'Начало', route: '/parent' }],
   [UserRole.Admin]: [
     { label: 'Начало', route: '/admin' },
     { label: 'Потребители', route: '/admin/users' },
+    { label: 'Класове', route: '/admin/classes' },
     { label: 'Състояние', route: '/admin/system' },
   ],
 };

@@ -1,0 +1,82 @@
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+import {
+  AcademicYear,
+  ClassStudent,
+  SchoolClass,
+  SubjectItem,
+  TeachingAssignment,
+} from './school.models';
+
+@Injectable({ providedIn: 'root' })
+export class SchoolService {
+  private readonly http = inject(HttpClient);
+
+  academicYears(): Promise<AcademicYear[]> {
+    return firstValueFrom(this.http.get<AcademicYear[]>('/api/v1/academic-years'));
+  }
+
+  subjects(includeInactive = false): Promise<SubjectItem[]> {
+    const params = new HttpParams().set('includeInactive', includeInactive);
+    return firstValueFrom(this.http.get<SubjectItem[]>('/api/v1/subjects', { params }));
+  }
+
+  createSubject(name: string, code: string): Promise<SubjectItem> {
+    return firstValueFrom(this.http.post<SubjectItem>('/api/v1/subjects', { name, code }));
+  }
+
+  setSubjectActive(id: string, isActive: boolean): Promise<SubjectItem> {
+    return firstValueFrom(this.http.put<SubjectItem>(`/api/v1/subjects/${id}/active`, { isActive }));
+  }
+
+  classes(academicYearId?: string): Promise<SchoolClass[]> {
+    let params = new HttpParams();
+    if (academicYearId) {
+      params = params.set('academicYearId', academicYearId);
+    }
+    return firstValueFrom(this.http.get<SchoolClass[]>('/api/v1/classes', { params }));
+  }
+
+  createClass(
+    academicYearId: string,
+    grade: number,
+    section: string,
+    homeroomTeacherId: string | null,
+  ): Promise<SchoolClass> {
+    return firstValueFrom(
+      this.http.post<SchoolClass>('/api/v1/classes', {
+        academicYearId,
+        grade,
+        section,
+        homeroomTeacherId,
+      }),
+    );
+  }
+
+  classStudents(schoolClassId: string): Promise<ClassStudent[]> {
+    return firstValueFrom(this.http.get<ClassStudent[]>(`/api/v1/classes/${schoolClassId}/students`));
+  }
+
+  enrollStudent(schoolClassId: string, studentUserId: string): Promise<void> {
+    return firstValueFrom(
+      this.http.post<void>(`/api/v1/classes/${schoolClassId}/students`, { studentUserId }),
+    );
+  }
+
+  withdrawStudent(schoolClassId: string, studentUserId: string): Promise<void> {
+    return firstValueFrom(
+      this.http.delete<void>(`/api/v1/classes/${schoolClassId}/students/${studentUserId}`),
+    );
+  }
+
+  assignments(schoolClassId?: string): Promise<TeachingAssignment[]> {
+    let params = new HttpParams();
+    if (schoolClassId) {
+      params = params.set('schoolClassId', schoolClassId);
+    }
+    return firstValueFrom(
+      this.http.get<TeachingAssignment[]>('/api/v1/teaching-assignments', { params }),
+    );
+  }
+}
