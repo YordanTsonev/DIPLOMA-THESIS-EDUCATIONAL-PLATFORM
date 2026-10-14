@@ -44,4 +44,6 @@ public interface IUserDirectory
     Task<UserDto?> FindByIdAsync(Guid userId, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<UserDto>> FindByIdsAsync(IReadOnlyCollection<Guid> userIds, CancellationToken cancellationToken = default);
+
+    Task<UserDto?> FindByEmailAsync(string email, CancellationToken cancellationToken = default);
 }

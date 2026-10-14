@@ -15,9 +15,16 @@
     <Project Path="src/Modules/Identity/EduPlatform.Modules.Identity.Domain/EduPlatform.Modules.Identity.Domain.csproj" />
     <Project Path="src/Modules/Identity/EduPlatform.Modules.Identity.Infrastructure/EduPlatform.Modules.Identity.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/SchoolStructure/">
+    <Project Path="src/Modules/SchoolStructure/EduPlatform.Modules.SchoolStructure.Application/EduPlatform.Modules.SchoolStructure.Application.csproj" />
+    <Project Path="src/Modules/SchoolStructure/EduPlatform.Modules.SchoolStructure.Contracts/EduPlatform.Modules.SchoolStructure.Contracts.csproj" />
+    <Project Path="src/Modules/SchoolStructure/EduPlatform.Modules.SchoolStructure.Domain/EduPlatform.Modules.SchoolStructure.Domain.csproj" />
+    <Project Path="src/Modules/SchoolStructure/EduPlatform.Modules.SchoolStructure.Infrastructure/EduPlatform.Modules.SchoolStructure.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/EduPlatform.Api.IntegrationTests/EduPlatform.Api.IntegrationTests.csproj" />
     <Project Path="tests/EduPlatform.ArchitectureTests/EduPlatform.ArchitectureTests.csproj" />
     <Project Path="tests/EduPlatform.Modules.Identity.UnitTests/EduPlatform.Modules.Identity.UnitTests.csproj" />
+    <Project Path="tests/EduPlatform.Modules.SchoolStructure.UnitTests/EduPlatform.Modules.SchoolStructure.UnitTests.csproj" />
   </Folder>
 </Solution>

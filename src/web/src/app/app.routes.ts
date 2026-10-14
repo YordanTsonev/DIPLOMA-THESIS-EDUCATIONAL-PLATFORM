@@ -62,10 +62,21 @@ export const routes: Routes = [
       {
         path: 'teacher',
         canActivate: [roleGuard(UserRole.Teacher)],
-        loadComponent: () =>
-          import('./features/dashboard/dashboard').then((m) => m.DashboardComponent),
-        data: { audience: 'teacher' },
-        title: 'Начало — EduPlatform',
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./features/dashboard/dashboard').then((m) => m.DashboardComponent),
+            data: { audience: 'teacher' },
+            title: 'Начало — EduPlatform',
+          },
+          {
+            path: 'classes',
+            loadComponent: () =>
+              import('./features/school/classes').then((m) => m.SchoolClassesComponent),
+            title: 'Класове — EduPlatform',
+          },
+        ],
       },
       {
         path: 'parent',
@@ -90,6 +101,12 @@ export const routes: Routes = [
             path: 'users',
             loadComponent: () => import('./features/admin/users').then((m) => m.AdminUsersComponent),
             title: 'Потребители — EduPlatform',
+          },
+          {
+            path: 'classes',
+            loadComponent: () =>
+              import('./features/school/classes').then((m) => m.SchoolClassesComponent),
+            title: 'Класове — EduPlatform',
           },
           {
             path: 'system',
