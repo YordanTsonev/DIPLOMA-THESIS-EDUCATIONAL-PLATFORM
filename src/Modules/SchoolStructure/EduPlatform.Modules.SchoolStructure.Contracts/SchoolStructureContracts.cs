@@ -50,3 +50,17 @@ public sealed record ScheduleSlotDto(
     string SchoolClassName,
     Guid TeacherUserId,
     string TeacherName);
+
+public sealed record CalendarEventDto(
+    Guid Id,
+    string Type,
+    string Title,
+    string? Description,
+    DateOnly StartsOn,
+    DateOnly EndsOn,
+    Guid? SchoolClassId,
+    string? SchoolClassName,
+    Guid? SubjectId,
+    string? SubjectName,
+    int? Period,
+    bool IsSchoolWide);

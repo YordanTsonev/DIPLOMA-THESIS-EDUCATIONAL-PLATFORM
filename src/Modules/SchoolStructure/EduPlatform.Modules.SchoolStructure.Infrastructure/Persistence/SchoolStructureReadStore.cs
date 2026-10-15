@@ -257,6 +257,83 @@ internal sealed class SchoolStructureReadStore(SchoolStructureDbContext dbContex
         return enrollment?.SchoolClassId;
     }
 
+    public async Task<IReadOnlyList<CalendarEventDto>> ListCalendarAsync(
+        DateOnly rangeStart,
+        DateOnly rangeEnd,
+        Guid? schoolClassId,
+        CancellationToken cancellationToken = default)
+    {
+        var events = dbContext.CalendarEvents
+            .AsNoTracking()
+            .Where(item => item.StartsOn <= rangeEnd && rangeStart <= item.EndsOn);
+
+        if (schoolClassId is { } classId)
+        {
+            events = events.Where(item => item.SchoolClassId == null || item.SchoolClassId == classId);
+        }
+
+        var rows = await events
+            .GroupJoin(
+                dbContext.SchoolClasses.AsNoTracking(),
+                item => item.SchoolClassId,
+                schoolClass => (Guid?)schoolClass.Id,
+                (item, classes) => new { item, classes })
+            .SelectMany(
+                row => row.classes.DefaultIfEmpty(),
+                (row, schoolClass) => new { row.item, schoolClass })
+            .GroupJoin(
+                dbContext.Subjects.AsNoTracking(),
+                row => row.item.SubjectId,
+                subject => (Guid?)subject.Id,
+                (row, subjects) => new { row.item, row.schoolClass, subjects })
+            .SelectMany(
+                row => row.subjects.DefaultIfEmpty(),
+                (row, subject) => new
+                {
+                    row.item.Id,
+                    row.item.Type,
+                    row.item.Title,
+                    row.item.Description,
+                    row.item.StartsOn,
+                    row.item.EndsOn,
+                    row.item.SchoolClassId,
+                    ClassGrade = row.schoolClass == null ? (int?)null : row.schoolClass.Grade,
+                    ClassSection = row.schoolClass == null ? null : row.schoolClass.Section,
+                    row.item.SubjectId,
+                    SubjectName = subject == null ? null : subject.Name,
+                    row.item.Period,
+                })
+            .OrderBy(row => row.StartsOn)
+            .ThenBy(row => row.Period)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return rows.Select(row => new CalendarEventDto(
+            row.Id,
+            row.Type.ToString(),
+            row.Title,
+            row.Description,
+            row.StartsOn,
+            row.EndsOn,
+            row.SchoolClassId,
+            row.ClassGrade is null ? null : row.ClassGrade + row.ClassSection,
+            row.SubjectId,
+            row.SubjectName,
+            row.Period,
+            row.SchoolClassId is null)).ToList();
+    }
+
+    public async Task<IReadOnlyList<Guid>> ListClassesOfTeacherAsync(
+        Guid teacherUserId,
+        CancellationToken cancellationToken = default) =>
+        await dbContext.TeachingAssignments
+            .AsNoTracking()
+            .Where(assignment => assignment.TeacherUserId == teacherUserId)
+            .Select(assignment => assignment.SchoolClassId)
+            .Distinct()
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
     private async Task<Dictionary<Guid, string>> ResolveNamesAsync(
         IEnumerable<Guid> userIds,
         CancellationToken cancellationToken)

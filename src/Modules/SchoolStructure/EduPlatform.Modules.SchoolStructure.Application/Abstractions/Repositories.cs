@@ -29,6 +29,12 @@ public interface ISchoolStructureRepository
 
     void AddSlot(ScheduleSlot slot);
 
+    void AddCalendarEvent(CalendarEvent calendarEvent);
+
+    void RemoveCalendarEvent(CalendarEvent calendarEvent);
+
+    Task<CalendarEvent?> FindCalendarEventAsync(Guid id, CancellationToken cancellationToken = default);
+
     void RemoveSlot(ScheduleSlot slot);
 
     Task<ScheduleSlot?> FindSlotAsync(Guid id, CancellationToken cancellationToken = default);
@@ -61,4 +67,12 @@ public interface ISchoolStructureReadStore
     Task<IReadOnlyList<ScheduleSlotDto>> ListScheduleAsync(Guid? schoolClassId, Guid? teacherUserId, CancellationToken cancellationToken = default);
 
     Task<Guid?> FindClassOfStudentAsync(Guid studentUserId, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<CalendarEventDto>> ListCalendarAsync(
+        DateOnly rangeStart,
+        DateOnly rangeEnd,
+        Guid? schoolClassId,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<Guid>> ListClassesOfTeacherAsync(Guid teacherUserId, CancellationToken cancellationToken = default);
 }

@@ -76,6 +76,13 @@ internal sealed class SchoolStructureRepository(SchoolStructureDbContext dbConte
 
     public void AddSlot(ScheduleSlot slot) => dbContext.ScheduleSlots.Add(slot);
 
+    public void AddCalendarEvent(CalendarEvent calendarEvent) => dbContext.CalendarEvents.Add(calendarEvent);
+
+    public void RemoveCalendarEvent(CalendarEvent calendarEvent) => dbContext.CalendarEvents.Remove(calendarEvent);
+
+    public Task<CalendarEvent?> FindCalendarEventAsync(Guid id, CancellationToken cancellationToken = default) =>
+        dbContext.CalendarEvents.SingleOrDefaultAsync(item => item.Id == id, cancellationToken);
+
     public void RemoveSlot(ScheduleSlot slot) => dbContext.ScheduleSlots.Remove(slot);
 
     public void AddAcademicYear(AcademicYear academicYear) => dbContext.AcademicYears.Add(academicYear);
