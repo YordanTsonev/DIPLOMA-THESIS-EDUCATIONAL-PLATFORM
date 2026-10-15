@@ -68,3 +68,26 @@ export const WEEKDAYS: ReadonlyArray<{ value: string; label: string }> = [
 ];
 
 export const PERIODS: readonly number[] = [1, 2, 3, 4, 5, 6, 7, 8];
+
+export interface CalendarEvent {
+  readonly id: string;
+  readonly type: string;
+  readonly title: string;
+  readonly description: string | null;
+  readonly startsOn: string;
+  readonly endsOn: string;
+  readonly schoolClassId: string | null;
+  readonly schoolClassName: string | null;
+  readonly subjectId: string | null;
+  readonly subjectName: string | null;
+  readonly period: number | null;
+  readonly isSchoolWide: boolean;
+}
+
+export const EVENT_LABELS: Readonly<Record<string, string>> = {
+  Test: 'Контролно',
+  Exam: 'Изпит',
+  Deadline: 'Краен срок',
+  Event: 'Събитие',
+  Holiday: 'Ваканция',
+};

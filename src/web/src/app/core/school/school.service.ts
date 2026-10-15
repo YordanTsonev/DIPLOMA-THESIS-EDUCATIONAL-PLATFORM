@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { PagedResult, User, UserRole } from '../auth/auth.models';
 import {
   AcademicYear,
+  CalendarEvent,
   ScheduleSlot,
   ClassStudent,
   SchoolClass,
@@ -86,6 +87,28 @@ export class SchoolService {
         weeklyHours,
       }),
     );
+  }
+
+  calendar(from: string, to: string): Promise<CalendarEvent[]> {
+    const params = new HttpParams().set('from', from).set('to', to);
+    return firstValueFrom(this.http.get<CalendarEvent[]>('/api/v1/calendar', { params }));
+  }
+
+  createCalendarEvent(payload: {
+    type: string;
+    title: string;
+    startsOn: string;
+    endsOn: string | null;
+    schoolClassId: string | null;
+    subjectId: string | null;
+    period: number | null;
+    description: string | null;
+  }): Promise<CalendarEvent> {
+    return firstValueFrom(this.http.post<CalendarEvent>('/api/v1/calendar', payload));
+  }
+
+  deleteCalendarEvent(id: string): Promise<void> {
+    return firstValueFrom(this.http.delete<void>(`/api/v1/calendar/${id}`));
   }
 
   mySchedule(): Promise<ScheduleSlot[]> {
