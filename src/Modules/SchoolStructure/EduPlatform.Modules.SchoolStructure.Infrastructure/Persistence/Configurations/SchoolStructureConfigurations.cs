@@ -135,3 +135,65 @@ internal sealed class TeachingAssignmentConfiguration : IEntityTypeConfiguration
             .OnDelete(DeleteBehavior.Cascade);
     }
 }
+
+internal sealed class ScheduleSlotConfiguration : IEntityTypeConfiguration<ScheduleSlot>
+{
+    public void Configure(EntityTypeBuilder<ScheduleSlot> builder)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        builder.ToTable("schedule_slots");
+        builder.HasKey(slot => slot.Id);
+
+        builder.Property(slot => slot.TeachingAssignmentId).IsRequired();
+        builder.Property(slot => slot.DayOfWeek).HasConversion<int>().IsRequired();
+        builder.Property(slot => slot.Period).IsRequired();
+        builder.Property(slot => slot.StartsAt).IsRequired();
+        builder.Property(slot => slot.EndsAt).IsRequired();
+        builder.Property(slot => slot.Room).HasMaxLength(ScheduleSlot.MaxRoomLength);
+
+        builder.Ignore(slot => slot.DomainEvents);
+
+        builder.HasIndex(slot => new { slot.TeachingAssignmentId, slot.DayOfWeek, slot.Period }).IsUnique();
+
+        builder.HasOne<TeachingAssignment>()
+            .WithMany()
+            .HasForeignKey(slot => slot.TeachingAssignmentId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+internal sealed class CalendarEventConfiguration : IEntityTypeConfiguration<CalendarEvent>
+{
+    public void Configure(EntityTypeBuilder<CalendarEvent> builder)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        builder.ToTable("calendar_events");
+        builder.HasKey(item => item.Id);
+
+        builder.Property(item => item.Type).HasConversion<int>().IsRequired();
+        builder.Property(item => item.Title).HasMaxLength(CalendarEvent.MaxTitleLength).IsRequired();
+        builder.Property(item => item.Description).HasMaxLength(CalendarEvent.MaxDescriptionLength);
+        builder.Property(item => item.StartsOn).IsRequired();
+        builder.Property(item => item.EndsOn).IsRequired();
+        builder.Property(item => item.CreatedByUserId).IsRequired();
+        builder.Property(item => item.CreatedAt).IsRequired();
+
+        builder.Ignore(item => item.IsSchoolWide);
+        builder.Ignore(item => item.DomainEvents);
+
+        builder.HasIndex(item => new { item.StartsOn, item.EndsOn });
+        builder.HasIndex(item => item.SchoolClassId);
+
+        builder.HasOne<SchoolClass>()
+            .WithMany()
+            .HasForeignKey(item => item.SchoolClassId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne<Subject>()
+            .WithMany()
+            .HasForeignKey(item => item.SubjectId)
+            .OnDelete(DeleteBehavior.SetNull);
+    }
+}

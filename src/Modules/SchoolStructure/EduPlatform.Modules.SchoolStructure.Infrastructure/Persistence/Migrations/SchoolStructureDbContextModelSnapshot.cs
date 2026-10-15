@@ -57,6 +57,70 @@ namespace EduPlatform.Modules.SchoolStructure.Infrastructure.Persistence.Migrati
                     b.ToTable("academic_years", "school");
                 });
 
+            modelBuilder.Entity("EduPlatform.Modules.SchoolStructure.Domain.CalendarEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("description");
+
+                    b.Property<DateOnly>("EndsOn")
+                        .HasColumnType("date")
+                        .HasColumnName("ends_on");
+
+                    b.Property<int?>("Period")
+                        .HasColumnType("integer")
+                        .HasColumnName("period");
+
+                    b.Property<Guid?>("SchoolClassId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("school_class_id");
+
+                    b.Property<DateOnly>("StartsOn")
+                        .HasColumnType("date")
+                        .HasColumnName("starts_on");
+
+                    b.Property<Guid?>("SubjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("subject_id");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
+                        .HasColumnName("title");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer")
+                        .HasColumnName("type");
+
+                    b.HasKey("Id")
+                        .HasName("pk_calendar_events");
+
+                    b.HasIndex("SchoolClassId")
+                        .HasDatabaseName("ix_calendar_events_school_class_id");
+
+                    b.HasIndex("SubjectId")
+                        .HasDatabaseName("ix_calendar_events_subject_id");
+
+                    b.HasIndex("StartsOn", "EndsOn")
+                        .HasDatabaseName("ix_calendar_events_starts_on_ends_on");
+
+                    b.ToTable("calendar_events", "school");
+                });
+
             modelBuilder.Entity("EduPlatform.Modules.SchoolStructure.Domain.ClassEnrollment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -90,6 +154,47 @@ namespace EduPlatform.Modules.SchoolStructure.Infrastructure.Persistence.Migrati
                         .HasDatabaseName("ix_class_enrollments_school_class_id_student_user_id");
 
                     b.ToTable("class_enrollments", "school");
+                });
+
+            modelBuilder.Entity("EduPlatform.Modules.SchoolStructure.Domain.ScheduleSlot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("DayOfWeek")
+                        .HasColumnType("integer")
+                        .HasColumnName("day_of_week");
+
+                    b.Property<TimeOnly>("EndsAt")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("ends_at");
+
+                    b.Property<int>("Period")
+                        .HasColumnType("integer")
+                        .HasColumnName("period");
+
+                    b.Property<string>("Room")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("room");
+
+                    b.Property<TimeOnly>("StartsAt")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("starts_at");
+
+                    b.Property<Guid>("TeachingAssignmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("teaching_assignment_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_schedule_slots");
+
+                    b.HasIndex("TeachingAssignmentId", "DayOfWeek", "Period")
+                        .IsUnique()
+                        .HasDatabaseName("ix_schedule_slots_teaching_assignment_id_day_of_week_period");
+
+                    b.ToTable("schedule_slots", "school");
                 });
 
             modelBuilder.Entity("EduPlatform.Modules.SchoolStructure.Domain.SchoolClass", b =>
@@ -196,6 +301,21 @@ namespace EduPlatform.Modules.SchoolStructure.Infrastructure.Persistence.Migrati
                     b.ToTable("teaching_assignments", "school");
                 });
 
+            modelBuilder.Entity("EduPlatform.Modules.SchoolStructure.Domain.CalendarEvent", b =>
+                {
+                    b.HasOne("EduPlatform.Modules.SchoolStructure.Domain.SchoolClass", null)
+                        .WithMany()
+                        .HasForeignKey("SchoolClassId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("fk_calendar_events_school_classes_school_class_id");
+
+                    b.HasOne("EduPlatform.Modules.SchoolStructure.Domain.Subject", null)
+                        .WithMany()
+                        .HasForeignKey("SubjectId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_calendar_events_subjects_subject_id");
+                });
+
             modelBuilder.Entity("EduPlatform.Modules.SchoolStructure.Domain.ClassEnrollment", b =>
                 {
                     b.HasOne("EduPlatform.Modules.SchoolStructure.Domain.SchoolClass", null)
@@ -204,6 +324,16 @@ namespace EduPlatform.Modules.SchoolStructure.Infrastructure.Persistence.Migrati
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_class_enrollments_school_classes_school_class_id");
+                });
+
+            modelBuilder.Entity("EduPlatform.Modules.SchoolStructure.Domain.ScheduleSlot", b =>
+                {
+                    b.HasOne("EduPlatform.Modules.SchoolStructure.Domain.TeachingAssignment", null)
+                        .WithMany()
+                        .HasForeignKey("TeachingAssignmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_schedule_slots_teaching_assignments_teaching_assignment_id");
                 });
 
             modelBuilder.Entity("EduPlatform.Modules.SchoolStructure.Domain.SchoolClass", b =>

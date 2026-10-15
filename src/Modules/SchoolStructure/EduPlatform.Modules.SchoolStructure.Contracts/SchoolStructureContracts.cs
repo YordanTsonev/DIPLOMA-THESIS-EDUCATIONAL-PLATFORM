@@ -35,3 +35,32 @@ public sealed record TeachingAssignmentDto(
     Guid SchoolClassId,
     string SchoolClassName,
     int WeeklyHours);
+
+public sealed record ScheduleSlotDto(
+    Guid Id,
+    Guid TeachingAssignmentId,
+    DayOfWeek DayOfWeek,
+    int Period,
+    TimeOnly StartsAt,
+    TimeOnly EndsAt,
+    string? Room,
+    Guid SubjectId,
+    string SubjectName,
+    Guid SchoolClassId,
+    string SchoolClassName,
+    Guid TeacherUserId,
+    string TeacherName);
+
+public sealed record CalendarEventDto(
+    Guid Id,
+    string Type,
+    string Title,
+    string? Description,
+    DateOnly StartsOn,
+    DateOnly EndsOn,
+    Guid? SchoolClassId,
+    string? SchoolClassName,
+    Guid? SubjectId,
+    string? SubjectName,
+    int? Period,
+    bool IsSchoolWide);

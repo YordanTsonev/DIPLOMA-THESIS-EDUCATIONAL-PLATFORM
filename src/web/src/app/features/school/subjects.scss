@@ -1,0 +1,76 @@
+:host {
+  display: grid;
+  gap: 20px;
+}
+
+h1 {
+  margin: 0 0 16px;
+  font-size: 1.5rem;
+}
+
+h2 {
+  margin: 0 0 12px;
+  font-size: 1.125rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--ep-line);
+}
+
+th {
+  font-size: 0.8125rem;
+  color: var(--ep-muted);
+  text-transform: uppercase;
+}
+
+tr.is-inactive td {
+  opacity: 0.55;
+}
+
+.code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.8125rem;
+  padding: 2px 8px;
+  border: 1px solid var(--ep-line);
+  border-radius: 6px;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--ep-line);
+  color: var(--ep-muted);
+
+  &.is-ok {
+    border-color: #a5d6a7;
+    background: var(--ep-success-surface);
+    color: var(--ep-success);
+  }
+}
+
+.create-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+
+  .ep-field {
+    margin-bottom: 0;
+  }
+
+  .grow {
+    flex: 1;
+    min-width: 240px;
+  }
+}

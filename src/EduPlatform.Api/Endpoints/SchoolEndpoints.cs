@@ -1,7 +1,9 @@
 using EduPlatform.Api.Authorization;
+using EduPlatform.Modules.Identity.Application.Abstractions;
 using EduPlatform.BuildingBlocks.Application.Messaging;
 using EduPlatform.Modules.SchoolStructure.Application.UseCases;
 using EduPlatform.Modules.SchoolStructure.Contracts;
+using EduPlatform.Modules.SchoolStructure.Domain;
 
 namespace EduPlatform.Api.Endpoints;
 
@@ -13,6 +15,8 @@ internal static class SchoolEndpoints
         MapSubjects(endpoints);
         MapClasses(endpoints);
         MapAssignments(endpoints);
+        MapSchedule(endpoints);
+        MapCalendar(endpoints);
         return endpoints;
     }
 
@@ -182,7 +186,160 @@ internal static class SchoolEndpoints
             .WithName("CreateTeachingAssignment")
             .Produces<TeachingAssignmentDto>(StatusCodes.Status201Created);
     }
+
+    private static void MapSchedule(IEndpointRouteBuilder endpoints)
+    {
+        var group = endpoints.MapGroup("/api/v1/schedule")
+            .WithTags("School structure")
+            .RequireAuthorization();
+
+        group.MapGet("/me", async (
+                ICurrentUser currentUser,
+                IDispatcher dispatcher,
+                CancellationToken cancellationToken) =>
+            {
+                if (currentUser.UserId is not { } userId || currentUser.Role is not { } role)
+                {
+                    return Results.Unauthorized();
+                }
+
+                var schedule = await dispatcher.QueryAsync(
+                    new GetMyScheduleQuery(userId, role.ToString()), cancellationToken);
+
+                return Results.Ok(schedule);
+            })
+            .WithName("GetMySchedule")
+            .Produces<IReadOnlyList<ScheduleSlotDto>>();
+
+        group.MapGet("/", async (
+                Guid? schoolClassId,
+                Guid? teacherUserId,
+                IDispatcher dispatcher,
+                CancellationToken cancellationToken) =>
+                Results.Ok(await dispatcher.QueryAsync(
+                    new GetScheduleQuery(schoolClassId, teacherUserId), cancellationToken)))
+            .WithName("GetSchedule")
+            .Produces<IReadOnlyList<ScheduleSlotDto>>();
+
+        group.MapPost("/", async (
+                AddScheduleSlotRequest request,
+                IDispatcher dispatcher,
+                CancellationToken cancellationToken) =>
+            {
+                var created = await dispatcher.SendAsync(
+                    new AddScheduleSlotCommand(
+                        request.TeachingAssignmentId, request.DayOfWeek, request.Period, request.Room),
+                    cancellationToken);
+
+                return Results.Created($"/api/v1/schedule/{created.Id}", created);
+            })
+            .RequireAuthorization(AuthorizationPolicies.AdminOnly)
+            .WithName("AddScheduleSlot")
+            .Produces<ScheduleSlotDto>(StatusCodes.Status201Created);
+
+        group.MapDelete("/{id:guid}", async (
+                Guid id,
+                IDispatcher dispatcher,
+                CancellationToken cancellationToken) =>
+            {
+                await dispatcher.SendAsync(new RemoveScheduleSlotCommand(id), cancellationToken);
+                return Results.NoContent();
+            })
+            .RequireAuthorization(AuthorizationPolicies.AdminOnly)
+            .WithName("RemoveScheduleSlot")
+            .Produces(StatusCodes.Status204NoContent);
+    }
+
+    private static void MapCalendar(IEndpointRouteBuilder endpoints)
+    {
+        var group = endpoints.MapGroup("/api/v1/calendar")
+            .WithTags("School structure")
+            .RequireAuthorization();
+
+        group.MapGet("/", async (
+                DateOnly? from,
+                DateOnly? to,
+                ICurrentUser currentUser,
+                IDispatcher dispatcher,
+                CancellationToken cancellationToken) =>
+            {
+                if (currentUser.UserId is not { } userId || currentUser.Role is not { } role)
+                {
+                    return Results.Unauthorized();
+                }
+
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
+                var rangeStart = from ?? new DateOnly(today.Year, today.Month, 1);
+                var rangeEnd = to ?? rangeStart.AddMonths(1).AddDays(-1);
+
+                var events = await dispatcher.QueryAsync(
+                    new GetMyCalendarQuery(userId, role.ToString(), rangeStart, rangeEnd), cancellationToken);
+
+                return Results.Ok(events);
+            })
+            .WithName("GetMyCalendar")
+            .WithSummary("Events visible to the signed-in user for a date range.")
+            .Produces<IReadOnlyList<CalendarEventDto>>();
+
+        group.MapPost("/", async (
+                CreateCalendarEventRequest request,
+                ICurrentUser currentUser,
+                IDispatcher dispatcher,
+                CancellationToken cancellationToken) =>
+            {
+                if (currentUser.UserId is not { } userId)
+                {
+                    return Results.Unauthorized();
+                }
+
+                var created = await dispatcher.SendAsync(
+                    new CreateCalendarEventCommand(
+                        request.Type,
+                        request.Title,
+                        request.StartsOn,
+                        request.EndsOn,
+                        userId,
+                        request.SchoolClassId,
+                        request.SubjectId,
+                        request.Period,
+                        request.Description),
+                    cancellationToken);
+
+                return Results.Created($"/api/v1/calendar/{created.Id}", created);
+            })
+            .RequireAuthorization(AuthorizationPolicies.TeacherOrAdmin)
+            .WithName("CreateCalendarEvent")
+            .Produces<CalendarEventDto>(StatusCodes.Status201Created);
+
+        group.MapDelete("/{id:guid}", async (
+                Guid id,
+                IDispatcher dispatcher,
+                CancellationToken cancellationToken) =>
+            {
+                await dispatcher.SendAsync(new DeleteCalendarEventCommand(id), cancellationToken);
+                return Results.NoContent();
+            })
+            .RequireAuthorization(AuthorizationPolicies.TeacherOrAdmin)
+            .WithName("DeleteCalendarEvent")
+            .Produces(StatusCodes.Status204NoContent);
+    }
 }
+
+internal sealed record CreateCalendarEventRequest(
+    CalendarEventType Type,
+    string Title,
+    DateOnly StartsOn,
+    DateOnly? EndsOn,
+    Guid? SchoolClassId,
+    Guid? SubjectId,
+    int? Period,
+    string? Description);
+
+internal sealed record AddScheduleSlotRequest(
+    Guid TeachingAssignmentId,
+    DayOfWeek DayOfWeek,
+    int Period,
+    string? Room);
 
 internal sealed record CreateAcademicYearRequest(string Name, DateOnly StartsOn, DateOnly EndsOn, bool MakeCurrent);
 

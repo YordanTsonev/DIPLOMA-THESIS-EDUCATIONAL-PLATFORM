@@ -1,0 +1,103 @@
+<section class="ep-card">
+  <div class="toolbar">
+    <h1>Календар</h1>
+    <div class="nav">
+      <button class="ep-button ep-button-secondary" type="button" (click)="shift(-1)">‹</button>
+      <span class="month">{{ monthLabel() }}</span>
+      <button class="ep-button ep-button-secondary" type="button" (click)="shift(1)">›</button>
+      <button class="ep-button ep-button-secondary" type="button" (click)="today()">Днес</button>
+    </div>
+  </div>
+
+  @if (error(); as message) {
+    <p class="ep-alert is-error" role="alert">{{ message }}</p>
+  }
+
+  @if (loading()) {
+    <p class="ep-muted">Зареждане…</p>
+  } @else {
+    <div class="month-grid">
+      @for (name of weekdayNames; track name) {
+        <div class="weekday">{{ name }}</div>
+      }
+
+      @for (week of weeks(); track $index) {
+        @for (day of week; track day.date) {
+          <button
+            type="button"
+            class="day"
+            [class.is-outside]="!day.inMonth"
+            [class.is-today]="day.isToday"
+            [class.has-events]="day.events.length > 0"
+            (click)="select(day)"
+          >
+            <span class="day-number">{{ day.dayOfMonth }}</span>
+            @for (item of day.events.slice(0, 2); track item.id) {
+              <span class="chip" [attr.data-type]="item.type">{{ item.title }}</span>
+            }
+            @if (day.events.length > 2) {
+              <span class="more">+{{ day.events.length - 2 }}</span>
+            }
+          </button>
+        }
+      }
+    </div>
+  }
+</section>
+
+@if (selected(); as day) {
+  <section class="ep-card">
+    <h2>{{ day.date }}</h2>
+    <ul class="detail-list">
+      @for (item of day.events; track item.id) {
+        <li>
+          <div class="detail-head">
+            <span class="chip" [attr.data-type]="item.type">{{ labels[item.type] ?? item.type }}</span>
+            <strong>{{ item.title }}</strong>
+          </div>
+          <div class="detail-meta">
+            @if (item.schoolClassName) {
+              <span>{{ item.schoolClassName }}</span>
+            } @else {
+              <span>за цялото училище</span>
+            }
+            @if (item.subjectName) {
+              <span>{{ item.subjectName }}</span>
+            }
+            @if (item.period) {
+              <span>{{ item.period }}. час</span>
+            }
+            @if (item.startsOn !== item.endsOn) {
+              <span>{{ item.startsOn }} – {{ item.endsOn }}</span>
+            }
+          </div>
+          @if (item.description) {
+            <p class="detail-text">{{ item.description }}</p>
+          }
+          @if (canManage()) {
+            <button class="ep-button ep-button-secondary" type="button" (click)="remove(item)">
+              Премахване
+            </button>
+          }
+        </li>
+      }
+    </ul>
+  </section>
+}
+
+<section class="ep-card">
+  <h2>Предстоящи</h2>
+  @if (upcoming().length === 0) {
+    <p class="ep-muted">Няма събития в показания период.</p>
+  } @else {
+    <ul class="upcoming-list">
+      @for (item of upcoming(); track item.id) {
+        <li>
+          <span class="chip" [attr.data-type]="item.type">{{ labels[item.type] ?? item.type }}</span>
+          <span class="upcoming-title">{{ item.title }}</span>
+          <span class="ep-muted">{{ item.startsOn }}</span>
+        </li>
+      }
+    </ul>
+  }
+</section>

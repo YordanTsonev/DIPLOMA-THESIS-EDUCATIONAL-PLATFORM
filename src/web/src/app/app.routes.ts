@@ -54,10 +54,27 @@ export const routes: Routes = [
       {
         path: 'student',
         canActivate: [roleGuard(UserRole.Student)],
-        loadComponent: () =>
-          import('./features/dashboard/dashboard').then((m) => m.DashboardComponent),
-        data: { audience: 'student' },
-        title: 'Начало — EduPlatform',
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./features/dashboard/dashboard').then((m) => m.DashboardComponent),
+            data: { audience: 'student' },
+            title: 'Начало — EduPlatform',
+          },
+          {
+            path: 'timetable',
+            loadComponent: () =>
+              import('./features/school/timetable').then((m) => m.TimetableComponent),
+            title: 'Програма — EduPlatform',
+          },
+          {
+            path: 'calendar',
+            loadComponent: () =>
+              import('./features/school/calendar').then((m) => m.CalendarComponent),
+            title: 'Календар — EduPlatform',
+          },
+        ],
       },
       {
         path: 'teacher',
@@ -76,15 +93,38 @@ export const routes: Routes = [
               import('./features/school/classes').then((m) => m.SchoolClassesComponent),
             title: 'Класове — EduPlatform',
           },
+          {
+            path: 'timetable',
+            loadComponent: () =>
+              import('./features/school/timetable').then((m) => m.TimetableComponent),
+            title: 'Програма — EduPlatform',
+          },
+          {
+            path: 'calendar',
+            loadComponent: () =>
+              import('./features/school/calendar').then((m) => m.CalendarComponent),
+            title: 'Календар — EduPlatform',
+          },
         ],
       },
       {
         path: 'parent',
         canActivate: [roleGuard(UserRole.Parent)],
-        loadComponent: () =>
-          import('./features/dashboard/dashboard').then((m) => m.DashboardComponent),
-        data: { audience: 'parent' },
-        title: 'Начало — EduPlatform',
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./features/dashboard/dashboard').then((m) => m.DashboardComponent),
+            data: { audience: 'parent' },
+            title: 'Начало — EduPlatform',
+          },
+          {
+            path: 'calendar',
+            loadComponent: () =>
+              import('./features/school/calendar').then((m) => m.CalendarComponent),
+            title: 'Календар — EduPlatform',
+          },
+        ],
       },
       {
         path: 'admin',
@@ -107,6 +147,18 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./features/school/classes').then((m) => m.SchoolClassesComponent),
             title: 'Класове — EduPlatform',
+          },
+          {
+            path: 'calendar',
+            loadComponent: () =>
+              import('./features/school/calendar').then((m) => m.CalendarComponent),
+            title: 'Календар — EduPlatform',
+          },
+          {
+            path: 'subjects',
+            loadComponent: () =>
+              import('./features/school/subjects').then((m) => m.SchoolSubjectsComponent),
+            title: 'Предмети — EduPlatform',
           },
           {
             path: 'system',

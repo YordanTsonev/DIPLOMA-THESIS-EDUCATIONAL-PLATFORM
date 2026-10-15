@@ -53,16 +53,27 @@ const ROLE_LABELS: Readonly<Record<UserRole, string>> = {
  * so the shape of the product is visible from the start.
  */
 const NAVIGATION: Readonly<Record<UserRole, readonly NavItem[]>> = {
-  [UserRole.Student]: [{ label: 'Начало', route: '/student' }],
+  [UserRole.Student]: [
+    { label: 'Начало', route: '/student' },
+    { label: 'Програма', route: '/student/timetable' },
+    { label: 'Календар', route: '/student/calendar' },
+  ],
   [UserRole.Teacher]: [
     { label: 'Начало', route: '/teacher' },
     { label: 'Класове', route: '/teacher/classes' },
+    { label: 'Програма', route: '/teacher/timetable' },
+    { label: 'Календар', route: '/teacher/calendar' },
   ],
-  [UserRole.Parent]: [{ label: 'Начало', route: '/parent' }],
+  [UserRole.Parent]: [
+    { label: 'Начало', route: '/parent' },
+    { label: 'Календар', route: '/parent/calendar' },
+  ],
   [UserRole.Admin]: [
     { label: 'Начало', route: '/admin' },
     { label: 'Потребители', route: '/admin/users' },
     { label: 'Класове', route: '/admin/classes' },
+    { label: 'Предмети', route: '/admin/subjects' },
+    { label: 'Календар', route: '/admin/calendar' },
     { label: 'Състояние', route: '/admin/system' },
   ],
 };
