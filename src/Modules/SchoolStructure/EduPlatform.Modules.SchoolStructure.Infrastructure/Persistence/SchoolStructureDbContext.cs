@@ -21,5 +21,7 @@ public sealed class SchoolStructureDbContext(DbContextOptions<SchoolStructureDbC
 
     public DbSet<ScheduleSlot> ScheduleSlots => Set<ScheduleSlot>();
 
+    public DbSet<CalendarEvent> CalendarEvents => Set<CalendarEvent>();
+
     protected override string Schema => SchemaName;
 }

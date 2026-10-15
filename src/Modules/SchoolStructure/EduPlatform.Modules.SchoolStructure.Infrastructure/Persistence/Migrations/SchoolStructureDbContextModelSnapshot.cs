@@ -57,6 +57,70 @@ namespace EduPlatform.Modules.SchoolStructure.Infrastructure.Persistence.Migrati
                     b.ToTable("academic_years", "school");
                 });
 
+            modelBuilder.Entity("EduPlatform.Modules.SchoolStructure.Domain.CalendarEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("description");
+
+                    b.Property<DateOnly>("EndsOn")
+                        .HasColumnType("date")
+                        .HasColumnName("ends_on");
+
+                    b.Property<int?>("Period")
+                        .HasColumnType("integer")
+                        .HasColumnName("period");
+
+                    b.Property<Guid?>("SchoolClassId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("school_class_id");
+
+                    b.Property<DateOnly>("StartsOn")
+                        .HasColumnType("date")
+                        .HasColumnName("starts_on");
+
+                    b.Property<Guid?>("SubjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("subject_id");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
+                        .HasColumnName("title");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer")
+                        .HasColumnName("type");
+
+                    b.HasKey("Id")
+                        .HasName("pk_calendar_events");
+
+                    b.HasIndex("SchoolClassId")
+                        .HasDatabaseName("ix_calendar_events_school_class_id");
+
+                    b.HasIndex("SubjectId")
+                        .HasDatabaseName("ix_calendar_events_subject_id");
+
+                    b.HasIndex("StartsOn", "EndsOn")
+                        .HasDatabaseName("ix_calendar_events_starts_on_ends_on");
+
+                    b.ToTable("calendar_events", "school");
+                });
+
             modelBuilder.Entity("EduPlatform.Modules.SchoolStructure.Domain.ClassEnrollment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -235,6 +299,21 @@ namespace EduPlatform.Modules.SchoolStructure.Infrastructure.Persistence.Migrati
                         .HasDatabaseName("ix_teaching_assignments_subject_id_school_class_id");
 
                     b.ToTable("teaching_assignments", "school");
+                });
+
+            modelBuilder.Entity("EduPlatform.Modules.SchoolStructure.Domain.CalendarEvent", b =>
+                {
+                    b.HasOne("EduPlatform.Modules.SchoolStructure.Domain.SchoolClass", null)
+                        .WithMany()
+                        .HasForeignKey("SchoolClassId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("fk_calendar_events_school_classes_school_class_id");
+
+                    b.HasOne("EduPlatform.Modules.SchoolStructure.Domain.Subject", null)
+                        .WithMany()
+                        .HasForeignKey("SubjectId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_calendar_events_subjects_subject_id");
                 });
 
             modelBuilder.Entity("EduPlatform.Modules.SchoolStructure.Domain.ClassEnrollment", b =>
