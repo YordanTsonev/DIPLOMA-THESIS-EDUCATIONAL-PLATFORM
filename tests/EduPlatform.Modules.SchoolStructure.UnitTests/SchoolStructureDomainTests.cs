@@ -166,3 +166,87 @@ public sealed class TeachingAssignmentTests
             Guid.Empty, Guid.CreateVersion7(), Guid.CreateVersion7(), 4));
     }
 }
+
+public sealed class ScheduleSlotTests
+{
+    private static readonly Guid AssignmentId = Guid.CreateVersion7();
+
+    [Fact]
+    public void A_slot_takes_the_bell_times_it_is_given()
+    {
+        var slot = CreateSlot(DayOfWeek.Monday, 1);
+
+        slot.StartsAt.ShouldBe(new TimeOnly(8, 0));
+        slot.EndsAt.ShouldBe(new TimeOnly(8, 40));
+    }
+
+    [Theory]
+    [InlineData(DayOfWeek.Saturday)]
+    [InlineData(DayOfWeek.Sunday)]
+    public void Lessons_cannot_fall_at_the_weekend(DayOfWeek day)
+    {
+        Should.Throw<DomainException>(() => CreateSlot(day, 1));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(11)]
+    public void Periods_outside_the_school_day_are_rejected(int period)
+    {
+        Should.Throw<DomainException>(() => ScheduleSlot.Create(
+            AssignmentId, DayOfWeek.Monday, period, new TimeOnly(8, 0), new TimeOnly(8, 40)));
+    }
+
+    [Fact]
+    public void A_lesson_must_end_after_it_starts()
+    {
+        Should.Throw<DomainException>(() => ScheduleSlot.Create(
+            AssignmentId, DayOfWeek.Monday, 1, new TimeOnly(9, 0), new TimeOnly(8, 0)));
+    }
+
+    [Fact]
+    public void Two_slots_at_the_same_time_on_the_same_day_overlap()
+    {
+        CreateSlot(DayOfWeek.Monday, 1).Overlaps(CreateSlot(DayOfWeek.Monday, 1)).ShouldBeTrue();
+    }
+
+    [Fact]
+    public void The_same_period_on_different_days_does_not_overlap()
+    {
+        CreateSlot(DayOfWeek.Monday, 1).Overlaps(CreateSlot(DayOfWeek.Tuesday, 1)).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void Consecutive_periods_do_not_overlap()
+    {
+        CreateSlot(DayOfWeek.Monday, 1).Overlaps(CreateSlot(DayOfWeek.Monday, 2)).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void A_moved_slot_keeps_its_identity()
+    {
+        var slot = CreateSlot(DayOfWeek.Monday, 1);
+        var id = slot.Id;
+
+        var (start, end) = SchoolPeriods.For(3);
+        slot.Move(DayOfWeek.Thursday, 3, start, end);
+
+        slot.Id.ShouldBe(id);
+        slot.DayOfWeek.ShouldBe(DayOfWeek.Thursday);
+        slot.Period.ShouldBe(3);
+    }
+
+    [Fact]
+    public void A_blank_room_is_stored_as_absent()
+    {
+        var (start, end) = SchoolPeriods.For(1);
+
+        ScheduleSlot.Create(AssignmentId, DayOfWeek.Monday, 1, start, end, "   ").Room.ShouldBeNull();
+    }
+
+    private static ScheduleSlot CreateSlot(DayOfWeek day, int period)
+    {
+        var (start, end) = SchoolPeriods.For(period);
+        return ScheduleSlot.Create(AssignmentId, day, period, start, end);
+    }
+}

@@ -92,6 +92,47 @@ namespace EduPlatform.Modules.SchoolStructure.Infrastructure.Persistence.Migrati
                     b.ToTable("class_enrollments", "school");
                 });
 
+            modelBuilder.Entity("EduPlatform.Modules.SchoolStructure.Domain.ScheduleSlot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("DayOfWeek")
+                        .HasColumnType("integer")
+                        .HasColumnName("day_of_week");
+
+                    b.Property<TimeOnly>("EndsAt")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("ends_at");
+
+                    b.Property<int>("Period")
+                        .HasColumnType("integer")
+                        .HasColumnName("period");
+
+                    b.Property<string>("Room")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("room");
+
+                    b.Property<TimeOnly>("StartsAt")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("starts_at");
+
+                    b.Property<Guid>("TeachingAssignmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("teaching_assignment_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_schedule_slots");
+
+                    b.HasIndex("TeachingAssignmentId", "DayOfWeek", "Period")
+                        .IsUnique()
+                        .HasDatabaseName("ix_schedule_slots_teaching_assignment_id_day_of_week_period");
+
+                    b.ToTable("schedule_slots", "school");
+                });
+
             modelBuilder.Entity("EduPlatform.Modules.SchoolStructure.Domain.SchoolClass", b =>
                 {
                     b.Property<Guid>("Id")
@@ -204,6 +245,16 @@ namespace EduPlatform.Modules.SchoolStructure.Infrastructure.Persistence.Migrati
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_class_enrollments_school_classes_school_class_id");
+                });
+
+            modelBuilder.Entity("EduPlatform.Modules.SchoolStructure.Domain.ScheduleSlot", b =>
+                {
+                    b.HasOne("EduPlatform.Modules.SchoolStructure.Domain.TeachingAssignment", null)
+                        .WithMany()
+                        .HasForeignKey("TeachingAssignmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_schedule_slots_teaching_assignments_teaching_assignment_id");
                 });
 
             modelBuilder.Entity("EduPlatform.Modules.SchoolStructure.Domain.SchoolClass", b =>

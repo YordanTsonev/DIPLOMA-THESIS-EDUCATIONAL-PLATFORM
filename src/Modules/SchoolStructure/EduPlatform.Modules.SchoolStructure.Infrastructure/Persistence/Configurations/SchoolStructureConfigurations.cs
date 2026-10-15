@@ -135,3 +135,30 @@ internal sealed class TeachingAssignmentConfiguration : IEntityTypeConfiguration
             .OnDelete(DeleteBehavior.Cascade);
     }
 }
+
+internal sealed class ScheduleSlotConfiguration : IEntityTypeConfiguration<ScheduleSlot>
+{
+    public void Configure(EntityTypeBuilder<ScheduleSlot> builder)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        builder.ToTable("schedule_slots");
+        builder.HasKey(slot => slot.Id);
+
+        builder.Property(slot => slot.TeachingAssignmentId).IsRequired();
+        builder.Property(slot => slot.DayOfWeek).HasConversion<int>().IsRequired();
+        builder.Property(slot => slot.Period).IsRequired();
+        builder.Property(slot => slot.StartsAt).IsRequired();
+        builder.Property(slot => slot.EndsAt).IsRequired();
+        builder.Property(slot => slot.Room).HasMaxLength(ScheduleSlot.MaxRoomLength);
+
+        builder.Ignore(slot => slot.DomainEvents);
+
+        builder.HasIndex(slot => new { slot.TeachingAssignmentId, slot.DayOfWeek, slot.Period }).IsUnique();
+
+        builder.HasOne<TeachingAssignment>()
+            .WithMany()
+            .HasForeignKey(slot => slot.TeachingAssignmentId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}

@@ -19,5 +19,7 @@ public sealed class SchoolStructureDbContext(DbContextOptions<SchoolStructureDbC
 
     public DbSet<TeachingAssignment> TeachingAssignments => Set<TeachingAssignment>();
 
+    public DbSet<ScheduleSlot> ScheduleSlots => Set<ScheduleSlot>();
+
     protected override string Schema => SchemaName;
 }
