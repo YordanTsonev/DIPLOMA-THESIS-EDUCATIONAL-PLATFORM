@@ -29,6 +29,56 @@ internal sealed class SchoolStructureSeeder(SchoolStructureDbContext dbContext, 
         var academicYear = await SeedAcademicYearAsync(cancellationToken).ConfigureAwait(false);
         await SeedSubjectsAsync(cancellationToken).ConfigureAwait(false);
         await SeedClassesAsync(academicYear, cancellationToken).ConfigureAwait(false);
+        await SeedScheduleAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task SeedScheduleAsync(CancellationToken cancellationToken)
+    {
+        if (await dbContext.ScheduleSlots.AnyAsync(cancellationToken).ConfigureAwait(false))
+        {
+            return;
+        }
+
+        var assignments = await dbContext.TeachingAssignments
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        if (assignments.Count == 0)
+        {
+            return;
+        }
+
+        var weekdays = new[]
+        {
+            DayOfWeek.Monday,
+            DayOfWeek.Tuesday,
+            DayOfWeek.Wednesday,
+            DayOfWeek.Thursday,
+            DayOfWeek.Friday,
+        };
+
+        foreach (var assignment in assignments)
+        {
+            var placed = 0;
+
+            foreach (var day in weekdays)
+            {
+                if (placed >= assignment.WeeklyHours)
+                {
+                    break;
+                }
+
+                var period = placed + 1;
+                var (startsAt, endsAt) = SchoolPeriods.For(period);
+
+                dbContext.ScheduleSlots.Add(ScheduleSlot.Create(
+                    assignment.Id, day, period, startsAt, endsAt, "каб. 201"));
+
+                placed++;
+            }
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<AcademicYear> SeedAcademicYearAsync(CancellationToken cancellationToken)

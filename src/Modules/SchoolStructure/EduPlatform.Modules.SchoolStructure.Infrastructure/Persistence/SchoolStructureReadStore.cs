@@ -179,6 +179,84 @@ internal sealed class SchoolStructureReadStore(SchoolStructureDbContext dbContex
             row.WeeklyHours)).ToList();
     }
 
+    public async Task<IReadOnlyList<ScheduleSlotDto>> ListScheduleAsync(
+        Guid? schoolClassId,
+        Guid? teacherUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var slots = dbContext.ScheduleSlots.AsNoTracking();
+
+        var rows = await slots
+            .Join(
+                dbContext.TeachingAssignments.AsNoTracking(),
+                slot => slot.TeachingAssignmentId,
+                assignment => assignment.Id,
+                (slot, assignment) => new { slot, assignment })
+            .Where(row => schoolClassId == null || row.assignment.SchoolClassId == schoolClassId)
+            .Where(row => teacherUserId == null || row.assignment.TeacherUserId == teacherUserId)
+            .Join(
+                dbContext.Subjects.AsNoTracking(),
+                row => row.assignment.SubjectId,
+                subject => subject.Id,
+                (row, subject) => new { row.slot, row.assignment, SubjectName = subject.Name })
+            .Join(
+                dbContext.SchoolClasses.AsNoTracking(),
+                row => row.assignment.SchoolClassId,
+                schoolClass => schoolClass.Id,
+                (row, schoolClass) => new
+                {
+                    row.slot.Id,
+                    row.slot.TeachingAssignmentId,
+                    row.slot.DayOfWeek,
+                    row.slot.Period,
+                    row.slot.StartsAt,
+                    row.slot.EndsAt,
+                    row.slot.Room,
+                    row.assignment.SubjectId,
+                    row.SubjectName,
+                    row.assignment.SchoolClassId,
+                    schoolClass.Grade,
+                    schoolClass.Section,
+                    row.assignment.TeacherUserId,
+                })
+            .OrderBy(row => row.DayOfWeek)
+            .ThenBy(row => row.Period)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var teacherNames = await ResolveNamesAsync(
+            rows.Select(row => row.TeacherUserId), cancellationToken).ConfigureAwait(false);
+
+        return rows.Select(row => new ScheduleSlotDto(
+            row.Id,
+            row.TeachingAssignmentId,
+            row.DayOfWeek,
+            row.Period,
+            row.StartsAt,
+            row.EndsAt,
+            row.Room,
+            row.SubjectId,
+            row.SubjectName,
+            row.SchoolClassId,
+            row.Grade + row.Section,
+            row.TeacherUserId,
+            teacherNames.TryGetValue(row.TeacherUserId, out var name) ? name : "-")).ToList();
+    }
+
+    public async Task<Guid?> FindClassOfStudentAsync(
+        Guid studentUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var enrollment = await dbContext.ClassEnrollments
+            .AsNoTracking()
+            .Where(item => item.StudentUserId == studentUserId && item.WithdrawnAt == null)
+            .Select(item => new { item.SchoolClassId })
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return enrollment?.SchoolClassId;
+    }
+
     private async Task<Dictionary<Guid, string>> ResolveNamesAsync(
         IEnumerable<Guid> userIds,
         CancellationToken cancellationToken)

@@ -21,6 +21,18 @@ public interface ISchoolStructureRepository
 
     Task<bool> AssignmentExistsAsync(Guid subjectId, Guid schoolClassId, CancellationToken cancellationToken = default);
 
+    Task<TeachingAssignment?> FindAssignmentAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<ScheduleSlot>> ListSlotsForClassAsync(Guid schoolClassId, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<ScheduleSlot>> ListSlotsForTeacherAsync(Guid teacherUserId, CancellationToken cancellationToken = default);
+
+    void AddSlot(ScheduleSlot slot);
+
+    void RemoveSlot(ScheduleSlot slot);
+
+    Task<ScheduleSlot?> FindSlotAsync(Guid id, CancellationToken cancellationToken = default);
+
     void AddAcademicYear(AcademicYear academicYear);
 
     void AddSubject(Subject subject);
@@ -45,4 +57,8 @@ public interface ISchoolStructureReadStore
     Task<IReadOnlyList<ClassStudentDto>> ListClassStudentsAsync(Guid schoolClassId, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<TeachingAssignmentDto>> ListAssignmentsAsync(Guid? schoolClassId, Guid? teacherUserId, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<ScheduleSlotDto>> ListScheduleAsync(Guid? schoolClassId, Guid? teacherUserId, CancellationToken cancellationToken = default);
+
+    Task<Guid?> FindClassOfStudentAsync(Guid studentUserId, CancellationToken cancellationToken = default);
 }

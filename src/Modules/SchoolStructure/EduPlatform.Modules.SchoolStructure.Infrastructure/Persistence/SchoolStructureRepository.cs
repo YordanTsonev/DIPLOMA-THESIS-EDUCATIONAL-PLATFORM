@@ -48,6 +48,36 @@ internal sealed class SchoolStructureRepository(SchoolStructureDbContext dbConte
             assignment => assignment.SubjectId == subjectId && assignment.SchoolClassId == schoolClassId,
             cancellationToken);
 
+    public Task<TeachingAssignment?> FindAssignmentAsync(Guid id, CancellationToken cancellationToken = default) =>
+        dbContext.TeachingAssignments.SingleOrDefaultAsync(assignment => assignment.Id == id, cancellationToken);
+
+    public async Task<IReadOnlyList<ScheduleSlot>> ListSlotsForClassAsync(
+        Guid schoolClassId,
+        CancellationToken cancellationToken = default) =>
+        await dbContext.ScheduleSlots
+            .Where(slot => dbContext.TeachingAssignments
+                .Any(assignment => assignment.Id == slot.TeachingAssignmentId
+                    && assignment.SchoolClassId == schoolClassId))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+    public async Task<IReadOnlyList<ScheduleSlot>> ListSlotsForTeacherAsync(
+        Guid teacherUserId,
+        CancellationToken cancellationToken = default) =>
+        await dbContext.ScheduleSlots
+            .Where(slot => dbContext.TeachingAssignments
+                .Any(assignment => assignment.Id == slot.TeachingAssignmentId
+                    && assignment.TeacherUserId == teacherUserId))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+    public Task<ScheduleSlot?> FindSlotAsync(Guid id, CancellationToken cancellationToken = default) =>
+        dbContext.ScheduleSlots.SingleOrDefaultAsync(slot => slot.Id == id, cancellationToken);
+
+    public void AddSlot(ScheduleSlot slot) => dbContext.ScheduleSlots.Add(slot);
+
+    public void RemoveSlot(ScheduleSlot slot) => dbContext.ScheduleSlots.Remove(slot);
+
     public void AddAcademicYear(AcademicYear academicYear) => dbContext.AcademicYears.Add(academicYear);
 
     public void AddSubject(Subject subject) => dbContext.Subjects.Add(subject);

@@ -1,4 +1,5 @@
 using EduPlatform.Api.Authorization;
+using EduPlatform.Modules.Identity.Application.Abstractions;
 using EduPlatform.BuildingBlocks.Application.Messaging;
 using EduPlatform.Modules.SchoolStructure.Application.UseCases;
 using EduPlatform.Modules.SchoolStructure.Contracts;
@@ -13,6 +14,7 @@ internal static class SchoolEndpoints
         MapSubjects(endpoints);
         MapClasses(endpoints);
         MapAssignments(endpoints);
+        MapSchedule(endpoints);
         return endpoints;
     }
 
@@ -182,7 +184,76 @@ internal static class SchoolEndpoints
             .WithName("CreateTeachingAssignment")
             .Produces<TeachingAssignmentDto>(StatusCodes.Status201Created);
     }
+
+    private static void MapSchedule(IEndpointRouteBuilder endpoints)
+    {
+        var group = endpoints.MapGroup("/api/v1/schedule")
+            .WithTags("School structure")
+            .RequireAuthorization();
+
+        group.MapGet("/me", async (
+                ICurrentUser currentUser,
+                IDispatcher dispatcher,
+                CancellationToken cancellationToken) =>
+            {
+                if (currentUser.UserId is not { } userId || currentUser.Role is not { } role)
+                {
+                    return Results.Unauthorized();
+                }
+
+                var schedule = await dispatcher.QueryAsync(
+                    new GetMyScheduleQuery(userId, role.ToString()), cancellationToken);
+
+                return Results.Ok(schedule);
+            })
+            .WithName("GetMySchedule")
+            .Produces<IReadOnlyList<ScheduleSlotDto>>();
+
+        group.MapGet("/", async (
+                Guid? schoolClassId,
+                Guid? teacherUserId,
+                IDispatcher dispatcher,
+                CancellationToken cancellationToken) =>
+                Results.Ok(await dispatcher.QueryAsync(
+                    new GetScheduleQuery(schoolClassId, teacherUserId), cancellationToken)))
+            .WithName("GetSchedule")
+            .Produces<IReadOnlyList<ScheduleSlotDto>>();
+
+        group.MapPost("/", async (
+                AddScheduleSlotRequest request,
+                IDispatcher dispatcher,
+                CancellationToken cancellationToken) =>
+            {
+                var created = await dispatcher.SendAsync(
+                    new AddScheduleSlotCommand(
+                        request.TeachingAssignmentId, request.DayOfWeek, request.Period, request.Room),
+                    cancellationToken);
+
+                return Results.Created($"/api/v1/schedule/{created.Id}", created);
+            })
+            .RequireAuthorization(AuthorizationPolicies.AdminOnly)
+            .WithName("AddScheduleSlot")
+            .Produces<ScheduleSlotDto>(StatusCodes.Status201Created);
+
+        group.MapDelete("/{id:guid}", async (
+                Guid id,
+                IDispatcher dispatcher,
+                CancellationToken cancellationToken) =>
+            {
+                await dispatcher.SendAsync(new RemoveScheduleSlotCommand(id), cancellationToken);
+                return Results.NoContent();
+            })
+            .RequireAuthorization(AuthorizationPolicies.AdminOnly)
+            .WithName("RemoveScheduleSlot")
+            .Produces(StatusCodes.Status204NoContent);
+    }
 }
+
+internal sealed record AddScheduleSlotRequest(
+    Guid TeachingAssignmentId,
+    DayOfWeek DayOfWeek,
+    int Period,
+    string? Room);
 
 internal sealed record CreateAcademicYearRequest(string Name, DateOnly StartsOn, DateOnly EndsOn, bool MakeCurrent);
 
