@@ -109,6 +109,12 @@ export const routes: Routes = [
             title: 'Класове — EduPlatform',
           },
           {
+            path: 'subjects',
+            loadComponent: () =>
+              import('./features/school/subjects').then((m) => m.SchoolSubjectsComponent),
+            title: 'Предмети — EduPlatform',
+          },
+          {
             path: 'system',
             loadComponent: () =>
               import('./features/system-status/system-status').then((m) => m.SystemStatusComponent),

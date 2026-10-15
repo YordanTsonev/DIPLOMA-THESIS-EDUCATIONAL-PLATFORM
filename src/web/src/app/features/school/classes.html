@@ -4,6 +4,9 @@
   @if (error(); as message) {
     <p class="ep-alert is-error" role="alert">{{ message }}</p>
   }
+  @if (notice(); as message) {
+    <p class="ep-alert is-success" role="status">{{ message }}</p>
+  }
 
   <form class="toolbar" [formGroup]="filter" (ngSubmit)="loadClasses()">
     <div class="ep-field">
@@ -70,6 +73,47 @@
           }
         </ul>
       }
+
+      <form class="inline-form" [formGroup]="assignForm" (ngSubmit)="assignSubject()" novalidate>
+        <div class="ep-field grow">
+          <label for="subject">Предмет</label>
+          <select id="subject" formControlName="subjectId">
+            <option value="">— изберете —</option>
+            @for (subject of subjects(); track subject.id) {
+              <option [value]="subject.id">{{ subject.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="ep-field grow">
+          <label for="teacher">Учител</label>
+          <select id="teacher" formControlName="teacherUserId">
+            <option value="">— изберете —</option>
+            @for (teacher of teachers(); track teacher.id) {
+              <option [value]="teacher.id">{{ teacher.fullName }}</option>
+            }
+          </select>
+        </div>
+        <div class="ep-field narrow">
+          <label for="hours">Часа</label>
+          <input id="hours" type="number" min="1" max="40" formControlName="weeklyHours" />
+        </div>
+        <button class="ep-button" type="submit">Добавяне</button>
+      </form>
+
+      <form class="inline-form" [formGroup]="enrollForm" (ngSubmit)="enroll()" novalidate>
+        <div class="ep-field grow">
+          <label for="student">Записване на ученик</label>
+          <select id="student" formControlName="studentUserId">
+            <option value="">— изберете —</option>
+            @for (student of availableStudents(); track student.id) {
+              <option [value]="student.id">{{ student.fullName }} ({{ student.email }})</option>
+            }
+          </select>
+        </div>
+        <button class="ep-button" type="submit" [disabled]="availableStudents().length === 0">
+          Записване
+        </button>
+      </form>
 
       @if (students().length === 0) {
         <p class="ep-muted">В този клас още няма записани ученици.</p>

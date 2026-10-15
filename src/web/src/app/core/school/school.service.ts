@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { PagedResult, User, UserRole } from '../auth/auth.models';
 import {
   AcademicYear,
   ClassStudent,
@@ -68,6 +69,33 @@ export class SchoolService {
     return firstValueFrom(
       this.http.delete<void>(`/api/v1/classes/${schoolClassId}/students/${studentUserId}`),
     );
+  }
+
+  createAssignment(
+    teacherUserId: string,
+    subjectId: string,
+    schoolClassId: string,
+    weeklyHours: number,
+  ): Promise<TeachingAssignment> {
+    return firstValueFrom(
+      this.http.post<TeachingAssignment>('/api/v1/teaching-assignments', {
+        teacherUserId,
+        subjectId,
+        schoolClassId,
+        weeklyHours,
+      }),
+    );
+  }
+
+  usersByRole(role: UserRole, search = ''): Promise<User[]> {
+    let params = new HttpParams().set('role', role).set('pageSize', 100).set('isActive', true);
+    if (search.trim() !== '') {
+      params = params.set('search', search.trim());
+    }
+
+    return firstValueFrom(
+      this.http.get<PagedResult<User>>('/api/v1/users', { params }),
+    ).then((page) => [...page.items]);
   }
 
   assignments(schoolClassId?: string): Promise<TeachingAssignment[]> {

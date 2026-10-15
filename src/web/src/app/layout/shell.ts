@@ -63,6 +63,7 @@ const NAVIGATION: Readonly<Record<UserRole, readonly NavItem[]>> = {
     { label: 'Начало', route: '/admin' },
     { label: 'Потребители', route: '/admin/users' },
     { label: 'Класове', route: '/admin/classes' },
+    { label: 'Предмети', route: '/admin/subjects' },
     { label: 'Състояние', route: '/admin/system' },
   ],
 };

@@ -105,3 +105,26 @@ th {
   color: var(--ep-muted);
   text-transform: uppercase;
 }
+
+.inline-form {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--ep-line);
+
+  .ep-field {
+    margin-bottom: 0;
+  }
+
+  .grow {
+    flex: 1;
+    min-width: 180px;
+  }
+
+  .narrow {
+    width: 90px;
+  }
+}

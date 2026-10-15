@@ -1,0 +1,62 @@
+<section class="ep-card">
+  <h1>Предмети</h1>
+
+  @if (error(); as message) {
+    <p class="ep-alert is-error" role="alert">{{ message }}</p>
+  }
+  @if (notice(); as message) {
+    <p class="ep-alert is-success" role="status">{{ message }}</p>
+  }
+
+  @if (loading()) {
+    <p class="ep-muted">Зареждане…</p>
+  } @else if (subjects().length === 0) {
+    <p class="ep-muted">Още няма въведени предмети.</p>
+  } @else {
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Код</th>
+          <th scope="col">Наименование</th>
+          <th scope="col">Състояние</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (subject of subjects(); track subject.id) {
+          <tr [class.is-inactive]="!subject.isActive">
+            <td><span class="code">{{ subject.code }}</span></td>
+            <td>{{ subject.name }}</td>
+            <td>
+              @if (subject.isActive) {
+                <span class="badge is-ok">активен</span>
+              } @else {
+                <span class="badge">спрян</span>
+              }
+            </td>
+            <td>
+              <button class="ep-button ep-button-secondary" type="button" (click)="toggle(subject)">
+                {{ subject.isActive ? 'Спиране' : 'Връщане' }}
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</section>
+
+<section class="ep-card">
+  <h2>Нов предмет</h2>
+  <form class="create-row" [formGroup]="createForm" (ngSubmit)="create()" novalidate>
+    <div class="ep-field grow">
+      <label for="name">Наименование</label>
+      <input id="name" formControlName="name" placeholder="Химия и опазване на околната среда" />
+    </div>
+    <div class="ep-field">
+      <label for="code">Код</label>
+      <input id="code" formControlName="code" placeholder="HIM" maxlength="16" />
+    </div>
+    <button class="ep-button" type="submit">Добавяне</button>
+  </form>
+</section>
