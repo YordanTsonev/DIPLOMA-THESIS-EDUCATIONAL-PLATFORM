@@ -1,0 +1,83 @@
+:host {
+  display: block;
+}
+
+h1 {
+  margin: 0 0 20px;
+  font-size: 1.5rem;
+}
+
+.grid-scroll {
+  overflow-x: auto;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 92px repeat(var(--columns), minmax(140px, 1fr));
+  gap: 6px;
+  min-width: 720px;
+}
+
+.corner {
+  background: transparent;
+}
+
+.head {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--ep-muted);
+  padding: 8px 10px;
+  text-align: center;
+}
+
+.period {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+  padding: 10px;
+  gap: 2px;
+}
+
+.period-no {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.period-time {
+  font-size: 0.75rem;
+  color: var(--ep-muted);
+  white-space: nowrap;
+}
+
+.cell {
+  min-height: 62px;
+  border: 1px solid var(--ep-line);
+  border-radius: 8px;
+  padding: 6px;
+  display: grid;
+  gap: 4px;
+  align-content: start;
+}
+
+.lesson {
+  display: grid;
+  gap: 2px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--ep-accent);
+  color: var(--ep-accent-ink);
+}
+
+.subject {
+  font-weight: 600;
+  font-size: 0.875rem;
+  line-height: 1.25;
+}
+
+.meta {
+  font-size: 0.75rem;
+  opacity: 0.85;
+}

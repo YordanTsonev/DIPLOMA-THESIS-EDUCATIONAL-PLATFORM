@@ -1,0 +1,49 @@
+<section class="ep-card">
+  <h1>Седмична програма</h1>
+
+  @if (error(); as message) {
+    <p class="ep-alert is-error" role="alert">{{ message }}</p>
+  }
+
+  @if (loading()) {
+    <p class="ep-muted">Зареждане…</p>
+  } @else if (isEmpty()) {
+    <p class="ep-muted">
+      Още няма съставена програма. Администраторът я задава от екрана с класовете.
+    </p>
+  } @else {
+    <div class="grid-scroll">
+      <div class="grid" [style.--columns]="columns().length">
+        <div class="corner"></div>
+        @for (column of columns(); track column.value) {
+          <div class="head">{{ column.label }}</div>
+        }
+
+        @for (period of usedPeriods(); track period) {
+          <div class="period">
+            <span class="period-no">{{ period }}</span>
+            <span class="period-time">{{ timeOf(period) }}</span>
+          </div>
+
+          @for (column of columns(); track column.value) {
+            <div class="cell">
+              @for (slot of column.cells[period - 1].slots; track slot.id) {
+                <div class="lesson">
+                  <span class="subject">{{ slot.subjectName }}</span>
+                  @if (isTeacher()) {
+                    <span class="meta">{{ slot.schoolClassName }}</span>
+                  } @else {
+                    <span class="meta">{{ slot.teacherName }}</span>
+                  }
+                  @if (slot.room) {
+                    <span class="meta">{{ slot.room }}</span>
+                  }
+                </div>
+              }
+            </div>
+          }
+        }
+      </div>
+    </div>
+  }
+</section>
