@@ -1,0 +1,127 @@
+<section class="ep-card">
+  <h1>Учебни материали</h1>
+
+  @if (error(); as message) {
+    <p class="ep-alert is-error" role="alert">{{ message }}</p>
+  }
+  @if (notice(); as message) {
+    <p class="ep-alert is-success" role="status">{{ message }}</p>
+  }
+
+  @if (loading()) {
+    <p class="ep-muted">Зареждане…</p>
+  } @else if (assignments().length === 0) {
+    <p class="ep-muted">Нямате предмети, към които да има материали.</p>
+  } @else {
+    <div class="subject-tabs">
+      @for (assignment of assignments(); track assignment.id) {
+        <button
+          type="button"
+          class="tab"
+          [class.is-active]="selectedAssignmentId() === assignment.id"
+          (click)="selectAssignment(assignment.id)"
+        >
+          {{ assignment.subjectName }}
+          <span class="tab-meta">{{ assignment.schoolClassName }}</span>
+        </button>
+      }
+    </div>
+
+    @if (visibleMaterials().length === 0) {
+      <p class="ep-muted">Още няма качени материали по този предмет.</p>
+    } @else {
+      <ul class="material-list">
+        @for (item of visibleMaterials(); track item.id) {
+          <li>
+            <div class="material-main">
+              <span class="kind" [attr.data-kind]="item.kind">
+                {{ item.kind === 'Link' ? 'връзка' : 'файл' }}
+              </span>
+              <div>
+                <strong>{{ item.title }}</strong>
+                <div class="material-meta">
+                  @if (folderName(item.folderId); as folder) {
+                    <span>{{ folder }}</span>
+                  }
+                  @if (item.fileName) {
+                    <span>{{ item.fileName }}</span>
+                  }
+                  @if (item.sizeBytes) {
+                    <span>{{ item.sizeBytes / 1024 | number: '1.0-0' }} KB</span>
+                  }
+                  <span>{{ item.createdAt | date: 'shortDate' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="material-actions">
+              @if (item.kind === 'Link') {
+                <a class="ep-button ep-button-secondary" [href]="item.url" target="_blank" rel="noopener">
+                  Отваряне
+                </a>
+              } @else {
+                <button class="ep-button ep-button-secondary" type="button" (click)="download(item)">
+                  Сваляне
+                </button>
+              }
+              @if (canManage()) {
+                <button class="ep-button ep-button-secondary" type="button" (click)="remove(item)">
+                  Изтриване
+                </button>
+              }
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  }
+</section>
+
+@if (canManage() && selectedAssignmentId()) {
+  <section class="ep-card">
+    <h2>Качване на файл</h2>
+
+    <form class="inline-form" [formGroup]="uploadForm" (ngSubmit)="upload()" novalidate>
+      <div class="ep-field grow">
+        <label for="file">Файл</label>
+        <input id="file" type="file" (change)="onFilePicked($event)" />
+      </div>
+      <div class="ep-field grow">
+        <label for="title">Заглавие</label>
+        <input id="title" formControlName="title" placeholder="по подразбиране името на файла" />
+      </div>
+      <div class="ep-field">
+        <label for="folder">Папка</label>
+        <select id="folder" formControlName="folderId">
+          <option value="">без папка</option>
+          @for (folder of visibleFolders(); track folder.id) {
+            <option [value]="folder.id">{{ folder.name }}</option>
+          }
+        </select>
+      </div>
+      <button class="ep-button" type="submit" [disabled]="busy() || !pickedFile()">Качване</button>
+    </form>
+
+    <h2>Добавяне на връзка</h2>
+    <form class="inline-form" [formGroup]="linkForm" (ngSubmit)="addLink()" novalidate>
+      <div class="ep-field grow">
+        <label for="url">Адрес</label>
+        <input id="url" formControlName="url" placeholder="https://..." />
+      </div>
+      <div class="ep-field grow">
+        <label for="linkTitle">Заглавие</label>
+        <input id="linkTitle" formControlName="title" />
+      </div>
+      <button class="ep-button" type="submit" [disabled]="busy()">Добавяне</button>
+    </form>
+
+    <h2>Нова папка</h2>
+    <form class="inline-form" [formGroup]="folderForm" (ngSubmit)="createFolder()" novalidate>
+      <div class="ep-field grow">
+        <label for="folderName">Име</label>
+        <input id="folderName" formControlName="name" placeholder="Тема 3" />
+      </div>
+      <button class="ep-button" type="submit" [disabled]="busy()">Създаване</button>
+    </form>
+  </section>
+}
