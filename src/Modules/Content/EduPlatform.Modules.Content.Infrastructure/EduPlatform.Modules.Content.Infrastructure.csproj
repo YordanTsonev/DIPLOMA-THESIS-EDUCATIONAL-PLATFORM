@@ -2,6 +2,7 @@
   <ItemGroup>
     <ProjectReference Include="..\EduPlatform.Modules.Content.Application\EduPlatform.Modules.Content.Application.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\EduPlatform.BuildingBlocks.Infrastructure\EduPlatform.BuildingBlocks.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\SchoolStructure\EduPlatform.Modules.SchoolStructure.Contracts\EduPlatform.Modules.SchoolStructure.Contracts.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="EFCore.NamingConventions" />
@@ -10,6 +11,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Minio" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
   </ItemGroup>
 </Project>

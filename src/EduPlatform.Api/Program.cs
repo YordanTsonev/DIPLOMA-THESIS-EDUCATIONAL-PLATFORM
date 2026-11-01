@@ -8,6 +8,8 @@ using EduPlatform.BuildingBlocks.Events;
 using EduPlatform.BuildingBlocks.Infrastructure;
 using EduPlatform.BuildingBlocks.Infrastructure.Seeding;
 using EduPlatform.Modules.Identity.Infrastructure;
+using EduPlatform.Modules.Content.Infrastructure;
+using EduPlatform.Modules.Gradebook.Infrastructure;
 using EduPlatform.Modules.SchoolStructure.Infrastructure;
 using EduPlatform.Modules.Identity.Infrastructure.Security;
 using HealthChecks.UI.Client;
@@ -56,6 +58,8 @@ try
     // ---- Modules -----------------------------------------------------------------
     builder.Services.AddIdentityModule(configuration);
     builder.Services.AddSchoolStructureModule(configuration);
+    builder.Services.AddContentModule(configuration);
+    builder.Services.AddGradebookModule(configuration);
 
     // ---- Authentication ------------------------------------------------------------
     var jwt = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
