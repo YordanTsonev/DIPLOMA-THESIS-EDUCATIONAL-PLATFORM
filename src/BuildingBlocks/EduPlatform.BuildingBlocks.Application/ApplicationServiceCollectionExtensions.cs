@@ -14,11 +14,6 @@ public static class ApplicationServiceCollectionExtensions
         typeof(ICommandHandler<,>),
         typeof(IQueryHandler<,>),
     ];
-
-    /// <summary>
-    /// Registers the dispatcher and the default behaviour pipeline.
-    /// Order matters: logging wraps validation, so a rejected message is still logged.
-    /// </summary>
     public static IServiceCollection AddMessaging(this IServiceCollection services)
     {
         services.TryAddScoped<IDispatcher, Dispatcher>();
@@ -29,11 +24,7 @@ public static class ApplicationServiceCollectionExtensions
         return services;
     }
 
-    /// <summary>
-    /// Registers every command handler, query handler and FluentValidation validator
-    /// found in <paramref name="assembly"/>. Each module calls this for its own
-    /// Application assembly during start-up.
-    /// </summary>
+
     public static IServiceCollection AddHandlersFromAssembly(
         this IServiceCollection services,
         Assembly assembly)
