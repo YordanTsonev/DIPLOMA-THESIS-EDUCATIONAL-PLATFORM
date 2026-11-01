@@ -207,6 +207,8 @@ try
     app.MapAuthEndpoints();
     app.MapUserEndpoints();
     app.MapSchoolEndpoints();
+    app.MapMaterialEndpoints();
+    app.MapGradebookEndpoints();
 
     // The fallback authorization policy also covers requests that match no endpoint, which would
     // answer a mistyped URL with 401 instead of 404. This anonymous terminal route restores the
