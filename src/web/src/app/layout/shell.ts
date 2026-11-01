@@ -58,6 +58,7 @@ const NAVIGATION: Readonly<Record<UserRole, readonly NavItem[]>> = {
     { label: 'Програма', route: '/student/timetable' },
     { label: 'Календар', route: '/student/calendar' },
     { label: 'Материали', route: '/student/materials' },
+    { label: 'Оценки', route: '/student/grades' },
   ],
   [UserRole.Teacher]: [
     { label: 'Начало', route: '/teacher' },
@@ -65,6 +66,7 @@ const NAVIGATION: Readonly<Record<UserRole, readonly NavItem[]>> = {
     { label: 'Програма', route: '/teacher/timetable' },
     { label: 'Календар', route: '/teacher/calendar' },
     { label: 'Материали', route: '/teacher/materials' },
+    { label: 'Дневник', route: '/teacher/gradebook' },
   ],
   [UserRole.Parent]: [
     { label: 'Начало', route: '/parent' },

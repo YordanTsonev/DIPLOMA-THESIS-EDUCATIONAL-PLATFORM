@@ -1,0 +1,70 @@
+<section class="ep-card">
+  <div class="head">
+    <h1>Моят успех</h1>
+    @if (report()?.overallAverage !== null && report()?.overallAverage !== undefined) {
+      <div class="overall">
+        <span class="overall-label">общ успех</span>
+        <span class="overall-value">{{ report()!.overallAverage | number: '1.2-2' }}</span>
+      </div>
+    }
+  </div>
+
+  @if (error(); as message) {
+    <p class="ep-alert is-error" role="alert">{{ message }}</p>
+  }
+
+  @if (loading()) {
+    <p class="ep-muted">Зареждане…</p>
+  } @else if (report(); as data) {
+    @if (data.subjects.length === 0) {
+      <p class="ep-muted">Още нямате предмети.</p>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Предмет</th>
+            <th scope="col">Оценки</th>
+            <th scope="col">Среден</th>
+            <th scope="col">Отсъствия</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (subject of data.subjects; track subject.teachingAssignmentId) {
+            <tr>
+              <td>{{ subject.subjectName }}</td>
+              <td>
+                @if (subject.grades.length === 0) {
+                  <span class="ep-muted">няма</span>
+                } @else {
+                  @for (value of subject.grades; track $index) {
+                    <span class="mark" [attr.data-value]="value >= 3 ? 'pass' : 'fail'">
+                      {{ value | number: '1.0-2' }}
+                    </span>
+                  }
+                }
+              </td>
+              <td>
+                @if (subject.average !== null) {
+                  <strong>{{ subject.average | number: '1.2-2' }}</strong>
+                } @else {
+                  <span class="ep-muted">няма</span>
+                }
+              </td>
+              <td class="absences">
+                @if (subject.unexcusedAbsences > 0) {
+                  <span class="badge is-bad">{{ subject.unexcusedAbsences }} неизв.</span>
+                }
+                @if (subject.excusedAbsences > 0) {
+                  <span class="badge">{{ subject.excusedAbsences }} изв.</span>
+                }
+                @if (subject.lateArrivals > 0) {
+                  <span class="badge is-warn">{{ subject.lateArrivals }} закъсн.</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  }
+</section>
