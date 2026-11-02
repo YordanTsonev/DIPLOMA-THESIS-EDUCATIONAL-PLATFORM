@@ -14,17 +14,11 @@ public sealed class AuditEntry : Entity
         IpAddress = ipAddress;
         OccurredAt = DateTimeOffset.UtcNow;
     }
-
-    /// <summary>Required by EF Core materialisation.</summary>
     private AuditEntry() { }
 
-    /// <summary>Who performed the action. Null for anonymous attempts such as a failed sign-in.</summary>
     public Guid? ActorUserId { get; private init; }
 
-    /// <summary>Stable action name, for example <c>user.role_changed</c>.</summary>
     public string Action { get; private init; } = null!;
-
-    /// <summary>Whose account the action concerned, when that differs from the actor.</summary>
     public Guid? SubjectUserId { get; private init; }
 
     public string? Detail { get; private init; }
@@ -48,8 +42,6 @@ public sealed class AuditEntry : Entity
         return new AuditEntry(actorUserId, action, subjectUserId, detail, ipAddress);
     }
 }
-
-/// <summary>The action names this module records. Constants, so a typo cannot create a new kind of event.</summary>
 public static class AuditActions
 {
     public const string UserRegistered = "user.registered";

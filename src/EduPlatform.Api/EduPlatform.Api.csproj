@@ -4,6 +4,10 @@
     <ProjectReference Include="..\BuildingBlocks\EduPlatform.BuildingBlocks.Infrastructure\EduPlatform.BuildingBlocks.Infrastructure.csproj" />
     <ProjectReference Include="..\Modules\SchoolStructure\EduPlatform.Modules.SchoolStructure.Infrastructure\EduPlatform.Modules.SchoolStructure.Infrastructure.csproj" />
     <ProjectReference Include="..\Modules\Identity\EduPlatform.Modules.Identity.Application\EduPlatform.Modules.Identity.Application.csproj" />
+    <ProjectReference Include="..\Modules\Content\EduPlatform.Modules.Content.Infrastructure\EduPlatform.Modules.Content.Infrastructure.csproj" />
+    <ProjectReference Include="..\Modules\Gradebook\EduPlatform.Modules.Gradebook.Infrastructure\EduPlatform.Modules.Gradebook.Infrastructure.csproj" />
+    <ProjectReference Include="..\Modules\Content\EduPlatform.Modules.Content.Application\EduPlatform.Modules.Content.Application.csproj" />
+    <ProjectReference Include="..\Modules\Gradebook\EduPlatform.Modules.Gradebook.Application\EduPlatform.Modules.Gradebook.Application.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AspNetCore.HealthChecks.NpgSql" />

@@ -1,0 +1,163 @@
+<section class="ep-card">
+  <h1>Дневник</h1>
+
+  @if (error(); as message) {
+    <p class="ep-alert is-error" role="alert">{{ message }}</p>
+  }
+  @if (notice(); as message) {
+    <p class="ep-alert is-success" role="status">{{ message }}</p>
+  }
+
+  @if (assignments().length === 0) {
+    <p class="ep-muted">Нямате преподавани предмети.</p>
+  } @else {
+    <div class="subject-tabs">
+      @for (assignment of assignments(); track assignment.id) {
+        <button
+          type="button"
+          class="tab"
+          [class.is-active]="selectedId() === assignment.id"
+          (click)="select(assignment.id)"
+        >
+          {{ assignment.subjectName }}
+          <span class="tab-meta">{{ assignment.schoolClassName }}</span>
+        </button>
+      }
+    </div>
+  }
+
+  @if (loading()) {
+    <p class="ep-muted">Зареждане…</p>
+  } @else if (view(); as gradebook) {
+    @if (gradebook.students.length === 0) {
+      <p class="ep-muted">В този клас няма записани ученици.</p>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Ученик</th>
+            <th scope="col">Оценки</th>
+            <th scope="col">Среден</th>
+            <th scope="col">Отсъствия</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (student of gradebook.students; track student.studentUserId) {
+            <tr
+              class="student-row"
+              [class.is-active]="activeStudent()?.studentUserId === student.studentUserId"
+              (click)="openStudent(student)"
+            >
+              <td>{{ student.studentName }}</td>
+              <td>
+                @if (student.grades.length === 0) {
+                  <span class="ep-muted">няма</span>
+                } @else {
+                  @for (grade of student.grades; track grade.id) {
+                    <span class="mark" [attr.data-value]="grade.value >= 3 ? 'pass' : 'fail'">
+                      {{ grade.value | number: '1.0-2' }}
+                    </span>
+                  }
+                }
+              </td>
+              <td>
+                @if (student.average !== null) {
+                  <strong>{{ student.average | number: '1.2-2' }}</strong>
+                } @else {
+                  <span class="ep-muted">няма</span>
+                }
+              </td>
+              <td class="absences">
+                @if (student.unexcusedAbsences > 0) {
+                  <span class="badge is-bad">{{ student.unexcusedAbsences }} неизв.</span>
+                }
+                @if (student.excusedAbsences > 0) {
+                  <span class="badge">{{ student.excusedAbsences }} изв.</span>
+                }
+                @if (student.lateArrivals > 0) {
+                  <span class="badge is-warn">{{ student.lateArrivals }} закъсн.</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  }
+</section>
+
+@if (activeStudent(); as student) {
+  <section class="ep-card">
+    <h2>{{ student.studentName }}</h2>
+
+    <h3>Нанасяне на оценка</h3>
+    <form class="inline-form" [formGroup]="gradeForm" (ngSubmit)="giveGrade()" novalidate>
+      <div class="ep-field narrow">
+        <label for="value">Оценка</label>
+        <input id="value" type="number" min="2" max="6" step="0.25" formControlName="value" />
+      </div>
+      <div class="ep-field grow">
+        <label for="reason">Основание</label>
+        <select id="reason" formControlName="reason">
+          @for (option of reasons; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </div>
+      <div class="ep-field grow">
+        <label for="comment">Коментар</label>
+        <input id="comment" formControlName="comment" />
+      </div>
+      <button class="ep-button" type="submit" [disabled]="busy()">Нанасяне</button>
+    </form>
+
+    <h3>Записване на отсъствие</h3>
+    <form class="inline-form" [formGroup]="absenceForm" (ngSubmit)="recordAbsence()" novalidate>
+      <div class="ep-field">
+        <label for="date">Дата</label>
+        <input id="date" type="date" formControlName="date" />
+      </div>
+      <div class="ep-field narrow">
+        <label for="period">Час</label>
+        <select id="period" formControlName="period">
+          @for (period of periods; track period) {
+            <option [value]="period">{{ period }}</option>
+          }
+        </select>
+      </div>
+      <div class="ep-field grow">
+        <label for="kind">Вид</label>
+        <select id="kind" formControlName="kind">
+          @for (option of absenceKinds; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </div>
+      <div class="ep-field grow">
+        <label for="note">Бележка</label>
+        <input id="note" formControlName="note" />
+      </div>
+      <button class="ep-button" type="submit" [disabled]="busy()">Записване</button>
+    </form>
+
+    @if (student.grades.length > 0) {
+      <h3>Нанесени оценки</h3>
+      <ul class="grade-list">
+        @for (grade of student.grades; track grade.id) {
+          <li>
+            <span class="mark" [attr.data-value]="grade.value >= 3 ? 'pass' : 'fail'">
+              {{ grade.value | number: '1.0-2' }}
+            </span>
+            <span class="grade-reason">{{ grade.reason }}</span>
+            @if (grade.comment) {
+              <span class="ep-muted">{{ grade.comment }}</span>
+            }
+            <button class="ep-button ep-button-secondary" type="button" (click)="deleteGrade(grade.id)">
+              Премахване
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+}

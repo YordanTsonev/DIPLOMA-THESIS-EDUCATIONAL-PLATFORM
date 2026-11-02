@@ -9,6 +9,18 @@
     <Project Path="src/BuildingBlocks/EduPlatform.BuildingBlocks.Infrastructure/EduPlatform.BuildingBlocks.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Content/">
+    <Project Path="src/Modules/Content/EduPlatform.Modules.Content.Application/EduPlatform.Modules.Content.Application.csproj" />
+    <Project Path="src/Modules/Content/EduPlatform.Modules.Content.Contracts/EduPlatform.Modules.Content.Contracts.csproj" />
+    <Project Path="src/Modules/Content/EduPlatform.Modules.Content.Domain/EduPlatform.Modules.Content.Domain.csproj" />
+    <Project Path="src/Modules/Content/EduPlatform.Modules.Content.Infrastructure/EduPlatform.Modules.Content.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Gradebook/">
+    <Project Path="src/Modules/Gradebook/EduPlatform.Modules.Gradebook.Application/EduPlatform.Modules.Gradebook.Application.csproj" />
+    <Project Path="src/Modules/Gradebook/EduPlatform.Modules.Gradebook.Contracts/EduPlatform.Modules.Gradebook.Contracts.csproj" />
+    <Project Path="src/Modules/Gradebook/EduPlatform.Modules.Gradebook.Domain/EduPlatform.Modules.Gradebook.Domain.csproj" />
+    <Project Path="src/Modules/Gradebook/EduPlatform.Modules.Gradebook.Infrastructure/EduPlatform.Modules.Gradebook.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Identity/">
     <Project Path="src/Modules/Identity/EduPlatform.Modules.Identity.Application/EduPlatform.Modules.Identity.Application.csproj" />
     <Project Path="src/Modules/Identity/EduPlatform.Modules.Identity.Contracts/EduPlatform.Modules.Identity.Contracts.csproj" />
@@ -24,6 +36,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/EduPlatform.Api.IntegrationTests/EduPlatform.Api.IntegrationTests.csproj" />
     <Project Path="tests/EduPlatform.ArchitectureTests/EduPlatform.ArchitectureTests.csproj" />
+    <Project Path="tests/EduPlatform.Modules.Gradebook.UnitTests/EduPlatform.Modules.Gradebook.UnitTests.csproj" />
     <Project Path="tests/EduPlatform.Modules.Identity.UnitTests/EduPlatform.Modules.Identity.UnitTests.csproj" />
     <Project Path="tests/EduPlatform.Modules.SchoolStructure.UnitTests/EduPlatform.Modules.SchoolStructure.UnitTests.csproj" />
   </Folder>

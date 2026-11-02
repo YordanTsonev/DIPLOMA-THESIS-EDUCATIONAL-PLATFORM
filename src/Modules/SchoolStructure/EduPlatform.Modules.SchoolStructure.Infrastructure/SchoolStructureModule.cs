@@ -4,6 +4,7 @@ using EduPlatform.BuildingBlocks.Infrastructure.Seeding;
 using EduPlatform.Modules.SchoolStructure.Infrastructure.Seeding;
 using EduPlatform.Modules.SchoolStructure.Application.Abstractions;
 using EduPlatform.Modules.SchoolStructure.Application.UseCases;
+using EduPlatform.Modules.SchoolStructure.Contracts;
 using EduPlatform.Modules.SchoolStructure.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -31,6 +32,7 @@ public static class SchoolStructureModule
         services.AddHandlersFromAssembly(typeof(ListSubjectsQuery).Assembly);
         services.AddScoped<ISchoolStructureRepository, SchoolStructureRepository>();
         services.AddScoped<ISchoolStructureReadStore, SchoolStructureReadStore>();
+        services.AddScoped<ISchoolDirectory, SchoolStructureReadStore>();
         services.AddScoped<IDataSeeder, SchoolStructureSeeder>();
 
         return services;

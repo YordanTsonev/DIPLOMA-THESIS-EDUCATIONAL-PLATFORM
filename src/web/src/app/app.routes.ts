@@ -74,6 +74,18 @@ export const routes: Routes = [
               import('./features/school/calendar').then((m) => m.CalendarComponent),
             title: 'Календар — EduPlatform',
           },
+          {
+            path: 'materials',
+            loadComponent: () =>
+              import('./features/materials/materials').then((m) => m.MaterialsComponent),
+            title: 'Материали — EduPlatform',
+          },
+          {
+            path: 'grades',
+            loadComponent: () =>
+              import('./features/gradebook/my-grades').then((m) => m.MyGradesComponent),
+            title: 'Оценки — EduPlatform',
+          },
         ],
       },
       {
@@ -105,6 +117,18 @@ export const routes: Routes = [
               import('./features/school/calendar').then((m) => m.CalendarComponent),
             title: 'Календар — EduPlatform',
           },
+          {
+            path: 'materials',
+            loadComponent: () =>
+              import('./features/materials/materials').then((m) => m.MaterialsComponent),
+            title: 'Материали — EduPlatform',
+          },
+          {
+            path: 'gradebook',
+            loadComponent: () =>
+              import('./features/gradebook/class-gradebook').then((m) => m.ClassGradebookComponent),
+            title: 'Дневник — EduPlatform',
+          },
         ],
       },
       {
@@ -123,6 +147,12 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./features/school/calendar').then((m) => m.CalendarComponent),
             title: 'Календар — EduPlatform',
+          },
+          {
+            path: 'materials',
+            loadComponent: () =>
+              import('./features/materials/materials').then((m) => m.MaterialsComponent),
+            title: 'Материали — EduPlatform',
           },
         ],
       },
@@ -153,6 +183,12 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./features/school/calendar').then((m) => m.CalendarComponent),
             title: 'Календар — EduPlatform',
+          },
+          {
+            path: 'materials',
+            loadComponent: () =>
+              import('./features/materials/materials').then((m) => m.MaterialsComponent),
+            title: 'Материали — EduPlatform',
           },
           {
             path: 'subjects',

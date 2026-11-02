@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace EduPlatform.Modules.SchoolStructure.Infrastructure.Persistence;
 
 internal sealed class SchoolStructureReadStore(SchoolStructureDbContext dbContext, IUserDirectory users)
-    : ISchoolStructureReadStore
+    : ISchoolStructureReadStore, ISchoolDirectory
 {
     public async Task<IReadOnlyList<AcademicYearDto>> ListAcademicYearsAsync(
         CancellationToken cancellationToken = default) =>
@@ -333,6 +333,36 @@ internal sealed class SchoolStructureReadStore(SchoolStructureDbContext dbContex
             .Distinct()
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
+
+    public async Task<IReadOnlyList<TeachingAssignmentDto>> ListAssignmentsForUserAsync(
+        Guid userId,
+        string role,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.Equals(role, "Teacher", StringComparison.Ordinal))
+        {
+            return await ListAssignmentsAsync(null, userId, cancellationToken).ConfigureAwait(false);
+        }
+
+        if (string.Equals(role, "Student", StringComparison.Ordinal))
+        {
+            var schoolClassId = await FindClassOfStudentAsync(userId, cancellationToken).ConfigureAwait(false);
+
+            return schoolClassId is null
+                ? []
+                : await ListAssignmentsAsync(schoolClassId, null, cancellationToken).ConfigureAwait(false);
+        }
+
+        return await ListAssignmentsAsync(null, null, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<TeachingAssignmentDto?> FindAssignmentAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var assignments = await ListAssignmentsAsync(null, null, cancellationToken).ConfigureAwait(false);
+        return assignments.SingleOrDefault(item => item.Id == id);
+    }
 
     private async Task<Dictionary<Guid, string>> ResolveNamesAsync(
         IEnumerable<Guid> userIds,
