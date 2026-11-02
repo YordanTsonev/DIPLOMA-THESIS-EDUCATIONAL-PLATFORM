@@ -1,7 +1,15 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { User, UserRole } from '../../core/auth/auth.models';
+import { AuthService } from '../../core/auth/auth.service';
 import { describeError } from '../../core/auth/problem-details';
 import { SchoolService } from '../../core/school/school.service';
 import {
@@ -22,6 +30,9 @@ import {
 export class SchoolClassesComponent implements OnInit {
   private readonly school = inject(SchoolService);
   private readonly formBuilder = inject(FormBuilder);
+  private readonly auth = inject(AuthService);
+
+  protected readonly isAdmin = computed(() => this.auth.role() === UserRole.Admin);
 
   protected readonly years = signal<AcademicYear[]>([]);
   protected readonly classes = signal<SchoolClass[]>([]);
@@ -69,7 +80,10 @@ export class SchoolClassesComponent implements OnInit {
       }
 
       await this.loadClasses();
-      await this.loadPickers();
+
+      if (this.isAdmin()) {
+        await this.loadPickers();
+      }
     } catch (error) {
       this.error.set(describeError(error));
     } finally {
@@ -112,17 +126,19 @@ export class SchoolClassesComponent implements OnInit {
     this.detailLoading.set(true);
     this.error.set(null);
     try {
-      const [students, assignments, allStudents] = await Promise.all([
+      const [students, assignments] = await Promise.all([
         this.school.classStudents(schoolClass.id),
         this.school.assignments(schoolClass.id),
-        this.school.usersByRole(UserRole.Student),
       ]);
 
       this.students.set(students);
       this.assignments.set(assignments);
 
-      const enrolled = new Set(students.map((student) => student.studentUserId));
-      this.availableStudents.set(allStudents.filter((student) => !enrolled.has(student.id)));
+      if (this.isAdmin()) {
+        const allStudents = await this.school.usersByRole(UserRole.Student);
+        const enrolled = new Set(students.map((student) => student.studentUserId));
+        this.availableStudents.set(allStudents.filter((student) => !enrolled.has(student.id)));
+      }
     } catch (error) {
       this.error.set(describeError(error));
     } finally {
