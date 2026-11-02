@@ -64,7 +64,7 @@ A modern educational platform designed as an improved alternative to the Bulgari
 | Push | Firebase Cloud Messaging | Out-of-app notifications |
 | Observability | OpenTelemetry + Prometheus + Grafana + Serilog | Metrics, logs, tracing |
 | Containerization | **Docker** / Docker Compose | Local environment |
-| Orchestration | **Kubernetes** + Helm | Production deployment |
+| Deployment | **Docker Compose** on a single host, behind Caddy | Production deployment, automatic TLS |
 | CI/CD | GitHub Actions → GHCR | Build, test, images |
 | Testing | xUnit + Shouldly + Testcontainers + Playwright | Unit, integration, E2E |
 
@@ -97,7 +97,7 @@ Modules: `Identity` · `SchoolStructure` · `Schedule` · `Content` · `Assignme
 ### Prerequisites
 - [.NET SDK 10](https://dotnet.microsoft.com/download)
 - [Node.js 22+](https://nodejs.org) and `npm`
-- [Docker Desktop](https://www.docker.com/products/docker-desktop) (enable Kubernetes for the deployment stage)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop)
 
 ### 1. Infrastructure
 
@@ -239,7 +239,7 @@ dotnet user-secrets set "Jwt:Key" "<generated 256-bit key>" --project src/EduPla
 └── Directory.Packages.props        Central package versions
 ```
 
-`deploy/helm/` and `deploy/k8s/` arrive in Phase 9; there is no Playwright project before Phase 9 either.
+`deploy/production/` arrives in Phase 9; there is no Playwright project before Phase 9 either.
 
 ---
 
@@ -269,7 +269,7 @@ exercise the extensions the application actually depends on. No in-memory databa
 
 ## Development plan
 
-The work is split into **10 phases plus the defense**, spanning the 2026/2027 academic year — from infrastructure to a finished product running on Kubernetes. The phase breakdown is tracked separately.
+The work is split into **10 phases plus the defense**, spanning the 2026/2027 academic year — from infrastructure to a finished product deployed on a single host. The phase breakdown is tracked separately.
 
 ---
 
