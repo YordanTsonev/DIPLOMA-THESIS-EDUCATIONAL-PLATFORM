@@ -61,6 +61,8 @@ internal sealed class HomeworkReadStore(
                 assignment.Description,
                 assignment.DueOn,
                 assignment.IsGraded,
+                assignment.FileName,
+                assignment.SizeBytes,
                 Submissions = dbContext.Submissions.Count(item => item.AssignmentId == assignment.Id),
                 Reviewed = dbContext.Submissions
                     .Count(item => item.AssignmentId == assignment.Id && item.ReviewedAt != null),
@@ -93,7 +95,9 @@ internal sealed class HomeworkReadStore(
                 row.DueOn < today,
                 row.Submissions,
                 row.Reviewed,
-                students.Count));
+                students.Count,
+                row.FileName,
+                row.SizeBytes));
         }
 
         return result;
@@ -165,7 +169,9 @@ internal sealed class HomeworkReadStore(
                 row.DueOn,
                 row.IsGraded,
                 row.DueOn < today,
-                byAssignment.GetValueOrDefault(row.Id)));
+                byAssignment.GetValueOrDefault(row.Id),
+                row.FileName,
+                row.SizeBytes));
         }
 
         return result;
@@ -200,6 +206,8 @@ internal sealed class HomeworkReadStore(
             submission.Mark,
             submission.Feedback,
             submission.ReviewedAt,
-            submission.GradeId))];
+            submission.GradeId,
+            submission.FileName,
+            submission.SizeBytes))];
     }
 }

@@ -29,6 +29,11 @@ namespace EduPlatform.Modules.Homework.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("ContentType")
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
+                        .HasColumnName("content_type");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -46,9 +51,23 @@ namespace EduPlatform.Modules.Homework.Infrastructure.Persistence.Migrations
                         .HasColumnType("date")
                         .HasColumnName("due_on");
 
+                    b.Property<string>("FileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("file_name");
+
                     b.Property<bool>("IsGraded")
                         .HasColumnType("boolean")
                         .HasColumnName("is_graded");
+
+                    b.Property<long?>("SizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("size_bytes");
+
+                    b.Property<string>("StorageKey")
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)")
+                        .HasColumnName("storage_key");
 
                     b.Property<Guid>("TeachingAssignmentId")
                         .HasColumnType("uuid")
@@ -79,10 +98,20 @@ namespace EduPlatform.Modules.Homework.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("assignment_id");
 
+                    b.Property<string>("ContentType")
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
+                        .HasColumnName("content_type");
+
                     b.Property<string>("Feedback")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)")
                         .HasColumnName("feedback");
+
+                    b.Property<string>("FileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("file_name");
 
                     b.Property<Guid?>("GradeId")
                         .HasColumnType("uuid")
@@ -104,6 +133,15 @@ namespace EduPlatform.Modules.Homework.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("ReviewedByUserId")
                         .HasColumnType("uuid")
                         .HasColumnName("reviewed_by_user_id");
+
+                    b.Property<long?>("SizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("size_bytes");
+
+                    b.Property<string>("StorageKey")
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)")
+                        .HasColumnName("storage_key");
 
                     b.Property<Guid>("StudentUserId")
                         .HasColumnType("uuid")

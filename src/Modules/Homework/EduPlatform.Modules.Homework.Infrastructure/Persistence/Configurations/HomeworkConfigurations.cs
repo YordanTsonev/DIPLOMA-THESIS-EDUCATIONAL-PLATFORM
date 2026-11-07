@@ -1,3 +1,4 @@
+using EduPlatform.BuildingBlocks.Domain;
 using EduPlatform.Modules.Homework.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -21,7 +22,12 @@ internal sealed class AssignmentConfiguration : IEntityTypeConfiguration<Assignm
         builder.Property(assignment => assignment.CreatedByUserId).IsRequired();
         builder.Property(assignment => assignment.CreatedAt).IsRequired();
 
+        builder.Property(assignment => assignment.StorageKey).HasMaxLength(400);
+        builder.Property(assignment => assignment.FileName).HasMaxLength(FileAttachmentRules.MaxFileNameLength);
+        builder.Property(assignment => assignment.ContentType).HasMaxLength(160);
+
         builder.Ignore(assignment => assignment.DomainEvents);
+        builder.Ignore(assignment => assignment.HasAttachment);
         builder.HasIndex(assignment => assignment.TeachingAssignmentId);
     }
 }
@@ -43,8 +49,13 @@ internal sealed class SubmissionConfiguration : IEntityTypeConfiguration<Submiss
         builder.Property(submission => submission.Mark).HasPrecision(4, 2);
         builder.Property(submission => submission.Feedback).HasMaxLength(Submission.MaxFeedbackLength);
 
+        builder.Property(submission => submission.StorageKey).HasMaxLength(400);
+        builder.Property(submission => submission.FileName).HasMaxLength(FileAttachmentRules.MaxFileNameLength);
+        builder.Property(submission => submission.ContentType).HasMaxLength(160);
+
         builder.Ignore(submission => submission.DomainEvents);
         builder.Ignore(submission => submission.IsReviewed);
+        builder.Ignore(submission => submission.HasAttachment);
 
         builder.HasIndex(submission => new { submission.AssignmentId, submission.StudentUserId }).IsUnique();
 

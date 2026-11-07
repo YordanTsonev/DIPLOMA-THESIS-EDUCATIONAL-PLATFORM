@@ -1,3 +1,4 @@
+using EduPlatform.BuildingBlocks.Application.Abstractions;
 using EduPlatform.BuildingBlocks.Application.Messaging;
 using EduPlatform.BuildingBlocks.Domain;
 using EduPlatform.Modules.Gradebook.Contracts;
@@ -105,7 +106,11 @@ public sealed record CreateAssignmentCommand(
     string? Description,
     DateOnly DueOn,
     bool IsGraded,
-    Guid TeacherUserId) : ICommand<AssignmentDto>;
+    Guid TeacherUserId,
+    Stream? Content = null,
+    string? FileName = null,
+    string? ContentType = null,
+    long SizeBytes = 0) : ICommand<AssignmentDto>;
 
 internal sealed class CreateAssignmentValidator : AbstractValidator<CreateAssignmentCommand>
 {
@@ -120,7 +125,8 @@ internal sealed class CreateAssignmentValidator : AbstractValidator<CreateAssign
 internal sealed class CreateAssignmentHandler(
     IHomeworkRepository repository,
     IHomeworkReadStore store,
-    ISchoolDirectory school) : ICommandHandler<CreateAssignmentCommand, AssignmentDto>
+    ISchoolDirectory school,
+    IFileStorage storage) : ICommandHandler<CreateAssignmentCommand, AssignmentDto>
 {
     public async Task<AssignmentDto> HandleAsync(
         CreateAssignmentCommand command,
@@ -140,6 +146,21 @@ internal sealed class CreateAssignmentHandler(
             command.IsGraded,
             command.TeacherUserId,
             DateOnly.FromDateTime(DateTime.UtcNow));
+
+        if (command.Content is not null)
+        {
+            var key = await storage
+                .SaveAsync(
+                    StorageBuckets.Submissions,
+                    command.Content,
+                    command.FileName ?? string.Empty,
+                    command.ContentType ?? string.Empty,
+                    command.SizeBytes,
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            assignment.Attach(key, command.FileName, command.ContentType, command.SizeBytes);
+        }
 
         repository.AddAssignment(assignment);
         await repository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -178,22 +199,29 @@ internal sealed class DeleteAssignmentHandler(
     }
 }
 
-public sealed record SubmitHomeworkCommand(Guid AssignmentId, Guid StudentUserId, string Text)
-    : ICommand<SubmissionDto>;
+public sealed record SubmitHomeworkCommand(
+    Guid AssignmentId,
+    Guid StudentUserId,
+    string Text,
+    Stream? Content = null,
+    string? FileName = null,
+    string? ContentType = null,
+    long SizeBytes = 0) : ICommand<SubmissionDto>;
 
 internal sealed class SubmitHomeworkValidator : AbstractValidator<SubmitHomeworkCommand>
 {
     public SubmitHomeworkValidator()
     {
         RuleFor(command => command.AssignmentId).NotEmpty();
-        RuleFor(command => command.Text).NotEmpty().MaximumLength(Submission.MaxTextLength);
+        RuleFor(command => command.Text).MaximumLength(Submission.MaxTextLength);
     }
 }
 
 internal sealed class SubmitHomeworkHandler(
     IHomeworkRepository repository,
     IHomeworkReadStore store,
-    ISchoolDirectory school) : ICommandHandler<SubmitHomeworkCommand, SubmissionDto>
+    ISchoolDirectory school,
+    IFileStorage storage) : ICommandHandler<SubmitHomeworkCommand, SubmissionDto>
 {
     public async Task<SubmissionDto> HandleAsync(
         SubmitHomeworkCommand command,
@@ -220,19 +248,44 @@ internal sealed class SubmitHomeworkHandler(
             .FindSubmissionOfStudentAsync(command.AssignmentId, command.StudentUserId, cancellationToken)
             .ConfigureAwait(false);
 
+        var keeps = command.Content is not null || existing?.HasAttachment == true;
+
         Submission submission;
 
         if (existing is null)
         {
             submission = Submission.Create(
-                command.AssignmentId, command.StudentUserId, command.Text, assignment.DueOn, today);
+                command.AssignmentId, command.StudentUserId, command.Text, keeps, assignment.DueOn, today);
 
             repository.AddSubmission(submission);
         }
         else
         {
-            existing.Replace(command.Text, assignment.DueOn, today);
+            existing.Replace(command.Text, keeps, assignment.DueOn, today);
             submission = existing;
+        }
+
+        if (command.Content is not null)
+        {
+            var replaced = submission.DetachFile();
+
+            var key = await storage
+                .SaveAsync(
+                    StorageBuckets.Submissions,
+                    command.Content,
+                    command.FileName ?? string.Empty,
+                    command.ContentType ?? string.Empty,
+                    command.SizeBytes,
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            submission.Attach(key, command.FileName, command.ContentType, command.SizeBytes);
+
+            if (replaced is not null)
+            {
+                await storage.DeleteAsync(StorageBuckets.Submissions, replaced, cancellationToken)
+                    .ConfigureAwait(false);
+            }
         }
 
         await repository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -306,5 +359,110 @@ internal sealed class ReviewSubmissionHandler(
 
         return await store.FindSubmissionAsync(submission.Id, cancellationToken).ConfigureAwait(false)
             ?? throw new DomainException("The submission could not be read back.");
+    }
+}
+
+public sealed record HomeworkFileDto(Stream Content, string FileName, string ContentType);
+
+public sealed record DownloadAssignmentFileQuery(Guid AssignmentId, Guid UserId, string Role)
+    : IQuery<HomeworkFileDto>;
+
+internal sealed class DownloadAssignmentFileHandler(
+    IHomeworkRepository repository,
+    ISchoolDirectory school,
+    IFileStorage storage) : IQueryHandler<DownloadAssignmentFileQuery, HomeworkFileDto>
+{
+    public async Task<HomeworkFileDto> HandleAsync(
+        DownloadAssignmentFileQuery query,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        var assignment = await repository.FindAssignmentAsync(query.AssignmentId, cancellationToken)
+            .ConfigureAwait(false)
+            ?? throw new DomainException("Homework assignment not found.");
+
+        if (assignment.StorageKey is not { } key)
+        {
+            throw new DomainException("This homework has no attachment.");
+        }
+
+        await EnsureSeesAsync(school, query.UserId, query.Role, assignment.TeachingAssignmentId, cancellationToken)
+            .ConfigureAwait(false);
+
+        var content = await storage.OpenAsync(StorageBuckets.Submissions, key, cancellationToken)
+            .ConfigureAwait(false);
+
+        return new HomeworkFileDto(
+            content,
+            assignment.FileName ?? "attachment",
+            assignment.ContentType ?? "application/octet-stream");
+    }
+
+    internal static async Task EnsureSeesAsync(
+        ISchoolDirectory school,
+        Guid userId,
+        string role,
+        Guid teachingAssignmentId,
+        CancellationToken cancellationToken)
+    {
+        if (role == "Admin")
+        {
+            return;
+        }
+
+        var own = await school.ListAssignmentsForUserAsync(userId, role, cancellationToken).ConfigureAwait(false);
+
+        if (!own.Any(item => item.Id == teachingAssignmentId))
+        {
+            throw new ForbiddenException("This homework does not belong to you.");
+        }
+    }
+}
+
+public sealed record DownloadSubmissionFileQuery(Guid SubmissionId, Guid UserId, string Role)
+    : IQuery<HomeworkFileDto>;
+
+internal sealed class DownloadSubmissionFileHandler(
+    IHomeworkRepository repository,
+    ISchoolDirectory school,
+    IFileStorage storage) : IQueryHandler<DownloadSubmissionFileQuery, HomeworkFileDto>
+{
+    public async Task<HomeworkFileDto> HandleAsync(
+        DownloadSubmissionFileQuery query,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        var submission = await repository.FindSubmissionAsync(query.SubmissionId, cancellationToken)
+            .ConfigureAwait(false)
+            ?? throw new DomainException("Submission not found.");
+
+        if (submission.StorageKey is not { } key)
+        {
+            throw new DomainException("This submission has no attachment.");
+        }
+
+        if (submission.StudentUserId != query.UserId)
+        {
+            var assignment = await repository.FindAssignmentAsync(submission.AssignmentId, cancellationToken)
+                .ConfigureAwait(false)
+                ?? throw new DomainException("Homework assignment not found.");
+
+            if (query.Role != "Admin")
+            {
+                await ListSubmissionsHandler
+                    .EnsureTeachesAsync(school, query.UserId, assignment.TeachingAssignmentId, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+        }
+
+        var content = await storage.OpenAsync(StorageBuckets.Submissions, key, cancellationToken)
+            .ConfigureAwait(false);
+
+        return new HomeworkFileDto(
+            content,
+            submission.FileName ?? "attachment",
+            submission.ContentType ?? "application/octet-stream");
     }
 }
