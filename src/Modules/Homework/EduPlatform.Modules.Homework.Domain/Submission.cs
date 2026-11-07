@@ -1,0 +1,154 @@
+using EduPlatform.BuildingBlocks.Domain;
+
+namespace EduPlatform.Modules.Homework.Domain;
+
+public sealed class Submission : AggregateRoot
+{
+    public const int MaxTextLength = 8000;
+    public const int MaxFeedbackLength = 1000;
+    public const decimal MinMark = 2.00m;
+    public const decimal MaxMark = 6.00m;
+
+    private Submission(
+        Guid id,
+        Guid assignmentId,
+        Guid studentUserId,
+        string text,
+        bool isLate)
+        : base(id)
+    {
+        AssignmentId = assignmentId;
+        StudentUserId = studentUserId;
+        Text = text;
+        IsLate = isLate;
+        SubmittedAt = DateTimeOffset.UtcNow;
+    }
+
+    private Submission() { }
+
+    public Guid AssignmentId { get; private set; }
+
+    public Guid StudentUserId { get; private set; }
+
+    public string Text { get; private set; } = null!;
+
+    public DateTimeOffset SubmittedAt { get; private set; }
+
+    public bool IsLate { get; private set; }
+
+    public decimal? Mark { get; private set; }
+
+    public string? Feedback { get; private set; }
+
+    public Guid? ReviewedByUserId { get; private set; }
+
+    public DateTimeOffset? ReviewedAt { get; private set; }
+
+    public Guid? GradeId { get; private set; }
+
+    public bool IsReviewed => ReviewedAt is not null;
+
+    public static Submission Create(
+        Guid assignmentId,
+        Guid studentUserId,
+        string? text,
+        DateOnly dueOn,
+        DateOnly today)
+    {
+        if (assignmentId == Guid.Empty)
+        {
+            throw new DomainException("A submission must belong to a homework assignment.");
+        }
+
+        if (studentUserId == Guid.Empty)
+        {
+            throw new DomainException("The author of the submission is required.");
+        }
+
+        return new Submission(Guid.CreateVersion7(), assignmentId, studentUserId, Validate(text), today > dueOn);
+    }
+
+    public void Replace(string? text, DateOnly dueOn, DateOnly today)
+    {
+        if (IsReviewed)
+        {
+            throw new DomainException("A reviewed submission can no longer be changed.");
+        }
+
+        Text = Validate(text);
+        IsLate = today > dueOn;
+        SubmittedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void Review(decimal? mark, string? feedback, Guid reviewerId, bool assignmentIsGraded)
+    {
+        if (reviewerId == Guid.Empty)
+        {
+            throw new DomainException("The reviewer is required.");
+        }
+
+        if (mark is not null && !assignmentIsGraded)
+        {
+            throw new DomainException("This homework was not set up to be graded.");
+        }
+
+        if (mark is { } value)
+        {
+            var rounded = Math.Round(value, 2, MidpointRounding.AwayFromZero);
+
+            if (rounded < MinMark || rounded > MaxMark)
+            {
+                throw new DomainException($"A mark must be between {MinMark:0.00} and {MaxMark:0.00}.");
+            }
+
+            if (GradeId is not null && rounded != Mark)
+            {
+                throw new DomainException("The mark has already been entered in the gradebook.");
+            }
+
+            Mark = rounded;
+        }
+        else if (GradeId is not null)
+        {
+            throw new DomainException("The mark has already been entered in the gradebook.");
+        }
+
+        var trimmed = feedback?.Trim();
+
+        if (trimmed is { Length: > MaxFeedbackLength })
+        {
+            throw new DomainException($"Feedback must not exceed {MaxFeedbackLength} characters.");
+        }
+
+        Feedback = trimmed is { Length: 0 } ? null : trimmed;
+        ReviewedByUserId = reviewerId;
+        ReviewedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void AttachGrade(Guid gradeId)
+    {
+        if (gradeId == Guid.Empty)
+        {
+            throw new DomainException("The grade is required.");
+        }
+
+        GradeId = gradeId;
+    }
+
+    private static string Validate(string? text)
+    {
+        var trimmed = text?.Trim() ?? string.Empty;
+
+        if (trimmed.Length == 0)
+        {
+            throw new DomainException("A submission cannot be empty.");
+        }
+
+        if (trimmed.Length > MaxTextLength)
+        {
+            throw new DomainException($"A submission must not exceed {MaxTextLength} characters.");
+        }
+
+        return trimmed;
+    }
+}
