@@ -14,6 +14,8 @@ export interface Submission {
   readonly feedback: string | null;
   readonly reviewedAt: string | null;
   readonly gradeId: string | null;
+  readonly fileName: string | null;
+  readonly sizeBytes: number | null;
 }
 
 export interface HomeworkAssignment {
@@ -29,6 +31,8 @@ export interface HomeworkAssignment {
   readonly submissionCount: number;
   readonly reviewedCount: number;
   readonly studentCount: number;
+  readonly fileName: string | null;
+  readonly sizeBytes: number | null;
 }
 
 export interface StudentAssignment {
@@ -41,6 +45,8 @@ export interface StudentAssignment {
   readonly isGraded: boolean;
   readonly isOverdue: boolean;
   readonly submission: Submission | null;
+  readonly fileName: string | null;
+  readonly sizeBytes: number | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -61,24 +67,64 @@ export class HomeworkService {
     );
   }
 
-  create(payload: {
-    teachingAssignmentId: string;
-    title: string;
-    description: string | null;
-    dueOn: string;
-    isGraded: boolean;
-  }): Promise<HomeworkAssignment> {
-    return firstValueFrom(this.http.post<HomeworkAssignment>('/api/v1/homework', payload));
+  create(
+    payload: {
+      teachingAssignmentId: string;
+      title: string;
+      description: string | null;
+      dueOn: string;
+      isGraded: boolean;
+    },
+    file: File | null,
+  ): Promise<HomeworkAssignment> {
+    const form = new FormData();
+    form.append('teachingAssignmentId', payload.teachingAssignmentId);
+    form.append('title', payload.title);
+    form.append('description', payload.description ?? '');
+    form.append('dueOn', payload.dueOn);
+    form.append('isGraded', `${payload.isGraded}`);
+
+    if (file) {
+      form.append('file', file, file.name);
+    }
+
+    return firstValueFrom(this.http.post<HomeworkAssignment>('/api/v1/homework', form));
   }
 
   remove(assignmentId: string): Promise<void> {
     return firstValueFrom(this.http.delete<void>(`/api/v1/homework/${assignmentId}`));
   }
 
-  submit(assignmentId: string, text: string): Promise<Submission> {
+  submit(assignmentId: string, text: string, file: File | null): Promise<Submission> {
+    const form = new FormData();
+    form.append('text', text);
+
+    if (file) {
+      form.append('file', file, file.name);
+    }
+
     return firstValueFrom(
-      this.http.post<Submission>(`/api/v1/homework/${assignmentId}/submissions`, { text }),
+      this.http.post<Submission>(`/api/v1/homework/${assignmentId}/submissions`, form),
     );
+  }
+
+  downloadAssignmentFile(assignment: { id: string; fileName: string | null }): Promise<void> {
+    return this.save(`/api/v1/homework/${assignment.id}/file`, assignment.fileName);
+  }
+
+  downloadSubmissionFile(submission: { id: string; fileName: string | null }): Promise<void> {
+    return this.save(`/api/v1/homework/submissions/${submission.id}/file`, submission.fileName);
+  }
+
+  private async save(url: string, fileName: string | null): Promise<void> {
+    const blob = await firstValueFrom(this.http.get(url, { responseType: 'blob' }));
+
+    const href = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = href;
+    anchor.download = fileName ?? 'attachment';
+    anchor.click();
+    URL.revokeObjectURL(href);
   }
 
   review(submissionId: string, mark: number | null, feedback: string | null): Promise<Submission> {

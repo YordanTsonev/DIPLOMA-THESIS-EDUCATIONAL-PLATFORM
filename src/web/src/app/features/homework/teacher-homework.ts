@@ -33,6 +33,8 @@ export class TeacherHomeworkComponent implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly notice = signal<string | null>(null);
 
+  protected readonly chosenFile = signal<File | null>(null);
+
   protected readonly createForm = this.formBuilder.nonNullable.group({
     teachingAssignmentId: ['', Validators.required],
     title: ['', [Validators.required, Validators.maxLength(160)]],
@@ -73,6 +75,30 @@ export class TeacherHomeworkComponent implements OnInit {
     this.formOpen.set(!this.formOpen());
   }
 
+  protected pick(event: Event): void {
+    this.chosenFile.set((event.target as HTMLInputElement).files?.[0] ?? null);
+  }
+
+  protected async downloadAssignment(assignment: HomeworkAssignment): Promise<void> {
+    this.error.set(null);
+
+    try {
+      await this.homework.downloadAssignmentFile(assignment);
+    } catch (error) {
+      this.error.set(describeError(error));
+    }
+  }
+
+  protected async downloadSubmission(submission: Submission): Promise<void> {
+    this.error.set(null);
+
+    try {
+      await this.homework.downloadSubmissionFile(submission);
+    } catch (error) {
+      this.error.set(describeError(error));
+    }
+  }
+
   protected async create(): Promise<void> {
     if (this.createForm.invalid || this.busy()) {
       this.createForm.markAllAsTouched();
@@ -82,15 +108,19 @@ export class TeacherHomeworkComponent implements OnInit {
     await this.run(async () => {
       const value = this.createForm.getRawValue();
 
-      await this.homework.create({
-        teachingAssignmentId: value.teachingAssignmentId,
-        title: value.title,
-        description: value.description.trim() || null,
-        dueOn: value.dueOn,
-        isGraded: value.isGraded,
-      });
+      await this.homework.create(
+        {
+          teachingAssignmentId: value.teachingAssignmentId,
+          title: value.title,
+          description: value.description.trim() || null,
+          dueOn: value.dueOn,
+          isGraded: value.isGraded,
+        },
+        this.chosenFile(),
+      );
 
       this.createForm.patchValue({ title: '', description: '' });
+      this.chosenFile.set(null);
       this.formOpen.set(false);
       this.notice.set('Домашното е зададено.');
     });

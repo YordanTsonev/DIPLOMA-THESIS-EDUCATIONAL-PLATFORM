@@ -33,8 +33,10 @@ export class MyHomeworkComponent implements OnInit {
     () => this.assignments().filter((item) => item.submission === null && !item.isOverdue).length,
   );
 
+  protected readonly chosenFile = signal<File | null>(null);
+
   protected readonly submitForm = this.formBuilder.nonNullable.group({
-    text: ['', [Validators.required, Validators.maxLength(8000)]],
+    text: ['', Validators.maxLength(8000)],
   });
 
   async ngOnInit(): Promise<void> {
@@ -72,7 +74,32 @@ export class MyHomeworkComponent implements OnInit {
     }
 
     this.selected.set(item);
+    this.chosenFile.set(null);
     this.submitForm.setValue({ text: item.submission?.text ?? '' });
+  }
+
+  protected pick(event: Event): void {
+    this.chosenFile.set((event.target as HTMLInputElement).files?.[0] ?? null);
+  }
+
+  protected async downloadAssignment(item: StudentAssignment): Promise<void> {
+    this.error.set(null);
+
+    try {
+      await this.homework.downloadAssignmentFile(item);
+    } catch (error) {
+      this.error.set(describeError(error));
+    }
+  }
+
+  protected async downloadOwn(submission: { id: string; fileName: string | null }): Promise<void> {
+    this.error.set(null);
+
+    try {
+      await this.homework.downloadSubmissionFile(submission);
+    } catch (error) {
+      this.error.set(describeError(error));
+    }
   }
 
   protected async submit(): Promise<void> {
@@ -83,12 +110,20 @@ export class MyHomeworkComponent implements OnInit {
       return;
     }
 
+    const text = this.submitForm.getRawValue().text.trim();
+
+    if (text === '' && !this.chosenFile() && !item.submission?.fileName) {
+      this.error.set('Напишете отговор или прикачете файл.');
+      return;
+    }
+
     this.busy.set(true);
     this.error.set(null);
     this.notice.set(null);
 
     try {
-      await this.homework.submit(item.id, this.submitForm.getRawValue().text);
+      await this.homework.submit(item.id, text, this.chosenFile());
+      this.chosenFile.set(null);
       this.assignments.set(await this.homework.mine());
       this.selected.set(this.assignments().find((entry) => entry.id === item.id) ?? null);
       this.notice.set('Домашното е предадено.');

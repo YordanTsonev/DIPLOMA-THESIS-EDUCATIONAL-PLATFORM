@@ -40,6 +40,9 @@
               @if (item.isGraded) {
                 <span class="badge is-graded">с оценка</span>
               }
+              @if (item.fileName) {
+                <span class="badge">файл</span>
+              }
             </td>
             <td class="ep-muted">{{ item.subjectName }}</td>
             <td [class.is-overdue]="item.isOverdue && !item.submission">{{ item.dueOn }}</td>
@@ -73,12 +76,32 @@
     @if (item.description) {
       <p class="description">{{ item.description }}</p>
     }
+    @if (item.fileName) {
+      <p>
+        <button
+          class="ep-button ep-button-secondary"
+          type="button"
+          (click)="downloadAssignment(item)"
+        >
+          {{ item.fileName }}
+        </button>
+      </p>
+    }
 
     @if (item.submission; as submission) {
       <div class="done">
         <span class="ep-muted">предадено на {{ submission.submittedAt | date: 'short' }}</span>
         @if (submission.isLate) {
           <span class="badge is-late">със закъснение</span>
+        }
+        @if (submission.fileName) {
+          <button
+            class="ep-button ep-button-secondary"
+            type="button"
+            (click)="downloadOwn(submission)"
+          >
+            {{ submission.fileName }}
+          </button>
         }
       </div>
 
@@ -107,6 +130,13 @@
         <div class="ep-field">
           <label for="text">Вашият отговор</label>
           <textarea id="text" rows="8" formControlName="text" maxlength="8000"></textarea>
+        </div>
+        <div class="ep-field">
+          <label for="file">Прикачен файл (по избор)</label>
+          <input id="file" type="file" (change)="pick($event)" />
+          @if (chosenFile(); as file) {
+            <span class="ep-muted file-hint">{{ file.name }}</span>
+          }
         </div>
         <button class="ep-button" type="submit" [disabled]="busy()">
           {{ item.submission ? 'Презаписване' : 'Предаване' }}

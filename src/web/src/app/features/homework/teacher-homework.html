@@ -84,6 +84,9 @@
               @if (item.isGraded) {
                 <span class="badge is-graded">с оценка</span>
               }
+              @if (item.fileName) {
+                <span class="badge">файл</span>
+              }
             </td>
             <td class="ep-muted">{{ item.subjectName }} — {{ item.schoolClassName }}</td>
             <td [class.is-overdue]="item.isOverdue">{{ item.dueOn }}</td>
@@ -111,6 +114,17 @@
     @if (assignment.description) {
       <p class="description">{{ assignment.description }}</p>
     }
+    @if (assignment.fileName) {
+      <p>
+        <button
+          class="ep-button ep-button-secondary"
+          type="button"
+          (click)="downloadAssignment(assignment)"
+        >
+          {{ assignment.fileName }}
+        </button>
+      </p>
+    }
 
     @if (submissions().length === 0) {
       <p class="ep-muted">Още никой не е предал.</p>
@@ -133,7 +147,20 @@
                 <span class="badge is-graded">в дневника</span>
               }
             </div>
-            <p class="submission-text">{{ submission.text }}</p>
+            @if (submission.text) {
+              <p class="submission-text">{{ submission.text }}</p>
+            }
+            @if (submission.fileName) {
+              <p>
+                <button
+                  class="ep-button ep-button-secondary"
+                  type="button"
+                  (click)="downloadSubmission(submission)"
+                >
+                  {{ submission.fileName }}
+                </button>
+              </p>
+            }
             @if (submission.feedback) {
               <p class="feedback">{{ submission.feedback }}</p>
             }
