@@ -72,9 +72,58 @@ public sealed class SubmissionTests
     private static readonly DateOnly Today = new(2026, 11, 7);
 
     [Fact]
-    public void An_empty_submission_is_rejected()
+    public void An_empty_submission_with_no_file_is_rejected()
     {
         Should.Throw<DomainException>(() => Create(text: "  "));
+    }
+
+    [Fact]
+    public void A_submission_with_only_a_file_is_accepted()
+    {
+        Create(text: "  ", hasAttachment: true).Text.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void An_attachment_records_its_name_and_size()
+    {
+        var submission = Create();
+        submission.Attach("2026/11/abc.pdf", "resheniya.pdf", "application/pdf", 1024);
+
+        submission.HasAttachment.ShouldBeTrue();
+        submission.FileName.ShouldBe("resheniya.pdf");
+        submission.SizeBytes.ShouldBe(1024);
+    }
+
+    [Fact]
+    public void A_file_type_outside_the_allowed_list_is_rejected()
+    {
+        Should.Throw<DomainException>(() => Create().Attach("k", "virus.exe", "application/octet-stream", 10));
+    }
+
+    [Fact]
+    public void A_file_over_the_size_limit_is_rejected()
+    {
+        Should.Throw<DomainException>(
+            () => Create().Attach("k", "big.zip", "application/zip", FileAttachmentRules.MaxFileSizeBytes + 1));
+    }
+
+    [Fact]
+    public void A_reviewed_submission_cannot_get_a_new_file()
+    {
+        var submission = Create();
+        submission.Review(5m, null, TeacherId, assignmentIsGraded: true);
+
+        Should.Throw<DomainException>(() => submission.Attach("k", "late.pdf", "application/pdf", 10));
+    }
+
+    [Fact]
+    public void Detaching_returns_the_key_it_replaced()
+    {
+        var submission = Create();
+        submission.Attach("2026/11/old.pdf", "old.pdf", "application/pdf", 10);
+
+        submission.DetachFile().ShouldBe("2026/11/old.pdf");
+        submission.HasAttachment.ShouldBeFalse();
     }
 
     [Fact]
@@ -95,7 +144,7 @@ public sealed class SubmissionTests
         var submission = Create();
         submission.Review(5m, "ok", TeacherId, assignmentIsGraded: true);
 
-        Should.Throw<DomainException>(() => submission.Replace("друго", Today.AddDays(1), Today));
+        Should.Throw<DomainException>(() => submission.Replace("друго", hasAttachment: false, Today.AddDays(1), Today));
     }
 
     [Theory]
@@ -154,6 +203,9 @@ public sealed class SubmissionTests
         submission.Mark.ShouldBe(5m);
     }
 
-    private static Submission Create(string? text = "Отговор", DateOnly? dueOn = null) =>
-        Submission.Create(AssignmentId, StudentId, text, dueOn ?? Today.AddDays(5), Today);
+    private static Submission Create(
+        string? text = "Отговор",
+        DateOnly? dueOn = null,
+        bool hasAttachment = false) =>
+        Submission.Create(AssignmentId, StudentId, text, hasAttachment, dueOn ?? Today.AddDays(5), Today);
 }
