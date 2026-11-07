@@ -353,7 +353,12 @@ internal sealed class SchoolStructureReadStore(SchoolStructureDbContext dbContex
                 : await ListAssignmentsAsync(schoolClassId, null, cancellationToken).ConfigureAwait(false);
         }
 
-        return await ListAssignmentsAsync(null, null, cancellationToken).ConfigureAwait(false);
+        if (string.Equals(role, "Admin", StringComparison.Ordinal))
+        {
+            return await ListAssignmentsAsync(null, null, cancellationToken).ConfigureAwait(false);
+        }
+
+        return [];
     }
 
     public async Task<TeachingAssignmentDto?> FindAssignmentAsync(
