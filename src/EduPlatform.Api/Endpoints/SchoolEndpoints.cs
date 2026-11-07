@@ -1,5 +1,6 @@
 using EduPlatform.Api.Authorization;
 using EduPlatform.Modules.Identity.Application.Abstractions;
+using EduPlatform.Modules.Identity.Domain;
 using EduPlatform.BuildingBlocks.Application.Messaging;
 using EduPlatform.Modules.SchoolStructure.Application.UseCases;
 using EduPlatform.Modules.SchoolStructure.Contracts;
@@ -163,10 +164,20 @@ internal static class SchoolEndpoints
         group.MapGet("/", async (
                 Guid? schoolClassId,
                 Guid? teacherUserId,
+                ICurrentUser currentUser,
                 IDispatcher dispatcher,
                 CancellationToken cancellationToken) =>
-                Results.Ok(await dispatcher.QueryAsync(
-                    new ListAssignmentsQuery(schoolClassId, teacherUserId), cancellationToken)))
+            {
+                if (currentUser.UserId is not { } userId || currentUser.Role is not { } role)
+                {
+                    return Results.Unauthorized();
+                }
+
+                var owner = role is UserRole.Teacher ? userId : teacherUserId;
+
+                return Results.Ok(await dispatcher.QueryAsync(
+                    new ListAssignmentsQuery(schoolClassId, owner), cancellationToken));
+            })
             .WithName("ListTeachingAssignments")
             .Produces<IReadOnlyList<TeachingAssignmentDto>>();
 
