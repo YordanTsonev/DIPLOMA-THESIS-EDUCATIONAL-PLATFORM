@@ -81,6 +81,12 @@ export const routes: Routes = [
             title: 'Материали — EduPlatform',
           },
           {
+            path: 'homework',
+            loadComponent: () =>
+              import('./features/homework/my-homework').then((m) => m.MyHomeworkComponent),
+            title: 'Домашни — EduPlatform',
+          },
+          {
             path: 'grades',
             loadComponent: () =>
               import('./features/gradebook/my-grades').then((m) => m.MyGradesComponent),
@@ -122,6 +128,14 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./features/materials/materials').then((m) => m.MaterialsComponent),
             title: 'Материали — EduPlatform',
+          },
+          {
+            path: 'homework',
+            loadComponent: () =>
+              import('./features/homework/teacher-homework').then(
+                (m) => m.TeacherHomeworkComponent,
+              ),
+            title: 'Домашни — EduPlatform',
           },
           {
             path: 'gradebook',
@@ -169,7 +183,8 @@ export const routes: Routes = [
           },
           {
             path: 'users',
-            loadComponent: () => import('./features/admin/users').then((m) => m.AdminUsersComponent),
+            loadComponent: () =>
+              import('./features/admin/users').then((m) => m.AdminUsersComponent),
             title: 'Потребители — EduPlatform',
           },
           {
@@ -209,7 +224,8 @@ export const routes: Routes = [
       {
         path: '',
         pathMatch: 'full',
-        loadComponent: () => import('./features/home-redirect').then((m) => m.HomeRedirectComponent),
+        loadComponent: () =>
+          import('./features/home-redirect').then((m) => m.HomeRedirectComponent),
       },
     ],
   },
