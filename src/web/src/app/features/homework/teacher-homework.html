@@ -50,6 +50,13 @@
           maxlength="4000"
         ></textarea>
       </div>
+      <div class="ep-field grow">
+        <label for="file">Прикачен файл (по избор)</label>
+        <input id="file" type="file" (change)="pick($event)" />
+        @if (chosenFile(); as file) {
+          <span class="ep-muted file-hint">{{ file.name }}</span>
+        }
+      </div>
       <button class="ep-button" type="submit" [disabled]="busy()">Задаване</button>
     </form>
   }
