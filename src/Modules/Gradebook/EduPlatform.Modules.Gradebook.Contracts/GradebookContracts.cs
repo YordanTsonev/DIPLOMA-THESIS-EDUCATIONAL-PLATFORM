@@ -26,7 +26,7 @@ public sealed record AbsenceDto(
 public sealed record SubjectPerformanceDto(
     Guid TeachingAssignmentId,
     string SubjectName,
-    IReadOnlyList<decimal> Grades,
+    IReadOnlyList<GradeDto> Grades,
     decimal? Average,
     int UnexcusedAbsences,
     int ExcusedAbsences,
