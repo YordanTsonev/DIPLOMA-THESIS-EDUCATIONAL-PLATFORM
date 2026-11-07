@@ -19,6 +19,7 @@
     @if (data.subjects.length === 0) {
       <p class="ep-muted">Още нямате предмети.</p>
     } @else {
+      <p class="ep-muted hint">Изберете предмет, за да видите подробностите.</p>
       <table>
         <thead>
           <tr>
@@ -30,15 +31,19 @@
         </thead>
         <tbody>
           @for (subject of data.subjects; track subject.teachingAssignmentId) {
-            <tr>
+            <tr
+              class="subject-row"
+              [class.is-active]="selected()?.teachingAssignmentId === subject.teachingAssignmentId"
+              (click)="select(subject)"
+            >
               <td>{{ subject.subjectName }}</td>
               <td>
                 @if (subject.grades.length === 0) {
                   <span class="ep-muted">няма</span>
                 } @else {
-                  @for (value of subject.grades; track $index) {
-                    <span class="mark" [attr.data-value]="value >= 3 ? 'pass' : 'fail'">
-                      {{ value | number: '1.0-2' }}
+                  @for (grade of subject.grades; track grade.id) {
+                    <span class="mark" [attr.data-value]="grade.value >= 3 ? 'pass' : 'fail'">
+                      {{ grade.value | number: '1.0-2' }}
                     </span>
                   }
                 }
@@ -68,3 +73,32 @@
     }
   }
 </section>
+
+@if (selected(); as subject) {
+  <section class="ep-card">
+    <h2>{{ subject.subjectName }}</h2>
+
+    @if (subject.grades.length === 0) {
+      <p class="ep-muted">По този предмет още нямате оценки.</p>
+    } @else {
+      <ul class="grade-list">
+        @for (grade of subject.grades; track grade.id) {
+          <li>
+            <span class="mark" [attr.data-value]="grade.value >= 3 ? 'pass' : 'fail'">
+              {{ grade.value | number: '1.0-2' }}
+            </span>
+            <div class="grade-body">
+              <span class="grade-reason">{{ reasonLabels[grade.reason] ?? grade.reason }}</span>
+              @if (grade.comment) {
+                <span class="grade-comment">{{ grade.comment }}</span>
+              } @else {
+                <span class="ep-muted">без коментар</span>
+              }
+            </div>
+            <span class="grade-date ep-muted">{{ grade.givenAt | date: 'shortDate' }}</span>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+}

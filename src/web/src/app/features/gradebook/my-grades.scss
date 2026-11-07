@@ -100,3 +100,62 @@ th {
     color: #8a5300;
   }
 }
+
+.hint {
+  margin: 0 0 10px;
+  font-size: 0.875rem;
+}
+
+.subject-row {
+  cursor: pointer;
+
+  &:hover {
+    background: #f6f8fa;
+  }
+
+  &.is-active {
+    background: #eef2f7;
+  }
+}
+
+h2 {
+  margin: 0 0 14px;
+  font-size: 1.125rem;
+}
+
+.grade-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.grade-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--ep-line);
+  border-radius: 8px;
+}
+
+.grade-body {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+}
+
+.grade-reason {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.grade-comment {
+  font-size: 0.875rem;
+}
+
+.grade-date {
+  white-space: nowrap;
+  font-size: 0.8125rem;
+}
