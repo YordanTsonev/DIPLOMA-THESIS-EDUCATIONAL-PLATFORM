@@ -48,10 +48,51 @@ public sealed class Submission : AggregateRoot
 
     public bool IsReviewed => ReviewedAt is not null;
 
+    public string? StorageKey { get; private set; }
+
+    public string? FileName { get; private set; }
+
+    public string? ContentType { get; private set; }
+
+    public long? SizeBytes { get; private set; }
+
+    public bool HasAttachment => StorageKey is not null;
+
+    public void Attach(string storageKey, string? fileName, string? contentType, long sizeBytes)
+    {
+        if (IsReviewed)
+        {
+            throw new DomainException("A reviewed submission can no longer be changed.");
+        }
+
+        if (string.IsNullOrWhiteSpace(storageKey))
+        {
+            throw new DomainException("A storage key is required.");
+        }
+
+        StorageKey = storageKey;
+        FileName = FileAttachmentRules.Validate(fileName, sizeBytes);
+        ContentType = string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType;
+        SizeBytes = sizeBytes;
+    }
+
+    public string? DetachFile()
+    {
+        var previous = StorageKey;
+
+        StorageKey = null;
+        FileName = null;
+        ContentType = null;
+        SizeBytes = null;
+
+        return previous;
+    }
+
     public static Submission Create(
         Guid assignmentId,
         Guid studentUserId,
         string? text,
+        bool hasAttachment,
         DateOnly dueOn,
         DateOnly today)
     {
@@ -65,17 +106,18 @@ public sealed class Submission : AggregateRoot
             throw new DomainException("The author of the submission is required.");
         }
 
-        return new Submission(Guid.CreateVersion7(), assignmentId, studentUserId, Validate(text), today > dueOn);
+        return new Submission(
+            Guid.CreateVersion7(), assignmentId, studentUserId, Validate(text, hasAttachment), today > dueOn);
     }
 
-    public void Replace(string? text, DateOnly dueOn, DateOnly today)
+    public void Replace(string? text, bool hasAttachment, DateOnly dueOn, DateOnly today)
     {
         if (IsReviewed)
         {
             throw new DomainException("A reviewed submission can no longer be changed.");
         }
 
-        Text = Validate(text);
+        Text = Validate(text, hasAttachment);
         IsLate = today > dueOn;
         SubmittedAt = DateTimeOffset.UtcNow;
     }
@@ -135,13 +177,13 @@ public sealed class Submission : AggregateRoot
         GradeId = gradeId;
     }
 
-    private static string Validate(string? text)
+    private static string Validate(string? text, bool hasAttachment)
     {
         var trimmed = text?.Trim() ?? string.Empty;
 
-        if (trimmed.Length == 0)
+        if (trimmed.Length == 0 && !hasAttachment)
         {
-            throw new DomainException("A submission cannot be empty.");
+            throw new DomainException("A submission needs text, a file, or both.");
         }
 
         if (trimmed.Length > MaxTextLength)

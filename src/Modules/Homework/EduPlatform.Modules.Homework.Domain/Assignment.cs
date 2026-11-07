@@ -42,6 +42,29 @@ public sealed class Assignment : AggregateRoot
 
     public DateTimeOffset CreatedAt { get; private set; }
 
+    public string? StorageKey { get; private set; }
+
+    public string? FileName { get; private set; }
+
+    public string? ContentType { get; private set; }
+
+    public long? SizeBytes { get; private set; }
+
+    public bool HasAttachment => StorageKey is not null;
+
+    public void Attach(string storageKey, string? fileName, string? contentType, long sizeBytes)
+    {
+        if (string.IsNullOrWhiteSpace(storageKey))
+        {
+            throw new DomainException("A storage key is required.");
+        }
+
+        StorageKey = storageKey;
+        FileName = FileAttachmentRules.Validate(fileName, sizeBytes);
+        ContentType = string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType;
+        SizeBytes = sizeBytes;
+    }
+
     public static Assignment Create(
         Guid teachingAssignmentId,
         string? title,

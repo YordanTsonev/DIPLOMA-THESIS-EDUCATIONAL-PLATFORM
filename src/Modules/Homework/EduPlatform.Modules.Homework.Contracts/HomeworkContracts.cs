@@ -12,7 +12,9 @@ public sealed record AssignmentDto(
     bool IsOverdue,
     int SubmissionCount,
     int ReviewedCount,
-    int StudentCount);
+    int StudentCount,
+    string? FileName,
+    long? SizeBytes);
 
 public sealed record SubmissionDto(
     Guid Id,
@@ -25,7 +27,9 @@ public sealed record SubmissionDto(
     decimal? Mark,
     string? Feedback,
     DateTimeOffset? ReviewedAt,
-    Guid? GradeId);
+    Guid? GradeId,
+    string? FileName,
+    long? SizeBytes);
 
 public sealed record StudentAssignmentDto(
     Guid Id,
@@ -36,4 +40,6 @@ public sealed record StudentAssignmentDto(
     DateOnly DueOn,
     bool IsGraded,
     bool IsOverdue,
-    SubmissionDto? Submission);
+    SubmissionDto? Submission,
+    string? FileName,
+    long? SizeBytes);
