@@ -21,13 +21,14 @@ internal static class GradebookEndpoints
                 IDispatcher dispatcher,
                 CancellationToken cancellationToken) =>
             {
-                if (currentUser.UserId is not { } userId)
+                if (currentUser.UserId is not { } userId || currentUser.Role is not { } role)
                 {
                     return Results.Unauthorized();
                 }
 
                 var view = await dispatcher.QueryAsync(
-                    new GetClassGradebookQuery(teachingAssignmentId, userId), cancellationToken);
+                    new GetClassGradebookQuery(teachingAssignmentId, userId, role.ToString()),
+                    cancellationToken);
 
                 return Results.Ok(view);
             })

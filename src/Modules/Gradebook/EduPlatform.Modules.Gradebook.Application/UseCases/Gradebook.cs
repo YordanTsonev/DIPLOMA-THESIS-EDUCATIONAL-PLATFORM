@@ -8,7 +8,7 @@ using FluentValidation;
 
 namespace EduPlatform.Modules.Gradebook.Application.UseCases;
 
-public sealed record GetClassGradebookQuery(Guid TeachingAssignmentId, Guid TeacherUserId)
+public sealed record GetClassGradebookQuery(Guid TeachingAssignmentId, Guid TeacherUserId, string Role)
     : IQuery<ClassGradebookDto>;
 
 public sealed record ClassGradebookDto(
@@ -39,6 +39,11 @@ internal sealed class GetClassGradebookHandler(
         var assignment = await school.FindAssignmentAsync(query.TeachingAssignmentId, cancellationToken)
             .ConfigureAwait(false)
             ?? throw new DomainException("Teaching assignment not found.");
+
+        if (query.Role == "Teacher" && assignment.TeacherUserId != query.TeacherUserId)
+        {
+            throw new ForbiddenException("You do not teach this subject to this class.");
+        }
 
         var students = await school
             .ListClassStudentsAsync(assignment.SchoolClassId, cancellationToken)
@@ -107,7 +112,7 @@ internal sealed class GetStudentReportHandler(
             return new SubjectPerformanceDto(
                 assignment.Id,
                 assignment.SubjectName,
-                own.Select(grade => grade.Value).ToList(),
+                own,
                 GetClassGradebookHandler.Average(own),
                 missed.Count(item => item.Kind == nameof(AbsenceKind.Unexcused)),
                 missed.Count(item => item.Kind == nameof(AbsenceKind.Excused)),
