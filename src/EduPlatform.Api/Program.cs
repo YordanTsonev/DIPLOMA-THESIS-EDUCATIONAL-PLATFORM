@@ -7,6 +7,7 @@ using EduPlatform.BuildingBlocks.Application;
 using EduPlatform.BuildingBlocks.Events;
 using EduPlatform.BuildingBlocks.Infrastructure;
 using EduPlatform.BuildingBlocks.Infrastructure.Seeding;
+using EduPlatform.BuildingBlocks.Infrastructure.Storage;
 using EduPlatform.Modules.Identity.Infrastructure;
 using EduPlatform.Modules.Content.Infrastructure;
 using EduPlatform.Modules.Gradebook.Infrastructure;
@@ -57,6 +58,7 @@ try
     builder.Services.AddDomainEvents();
 
     // ---- Modules -----------------------------------------------------------------
+    builder.Services.AddFileStorage(configuration);
     builder.Services.AddIdentityModule(configuration);
     builder.Services.AddSchoolStructureModule(configuration);
     builder.Services.AddContentModule(configuration);

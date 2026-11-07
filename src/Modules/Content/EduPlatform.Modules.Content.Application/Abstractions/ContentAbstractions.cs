@@ -3,20 +3,6 @@ using EduPlatform.Modules.Content.Domain;
 
 namespace EduPlatform.Modules.Content.Application.Abstractions;
 
-public interface IFileStorage
-{
-    Task<string> SaveAsync(
-        Stream content,
-        string fileName,
-        string contentType,
-        long sizeBytes,
-        CancellationToken cancellationToken = default);
-
-    Task<Stream> OpenAsync(string storageKey, CancellationToken cancellationToken = default);
-
-    Task DeleteAsync(string storageKey, CancellationToken cancellationToken = default);
-}
-
 public interface IContentRepository
 {
     Task<Material?> FindMaterialAsync(Guid id, CancellationToken cancellationToken = default);
