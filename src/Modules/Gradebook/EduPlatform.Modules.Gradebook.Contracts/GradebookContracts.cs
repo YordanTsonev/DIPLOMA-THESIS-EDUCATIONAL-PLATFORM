@@ -37,3 +37,14 @@ public sealed record StudentReportDto(
     string StudentName,
     IReadOnlyList<SubjectPerformanceDto> Subjects,
     decimal? OverallAverage);
+
+public interface IGradebookWriter
+{
+    Task<GradeDto> GiveHomeworkGradeAsync(
+        Guid studentUserId,
+        Guid teachingAssignmentId,
+        decimal value,
+        Guid teacherUserId,
+        string? comment,
+        CancellationToken cancellationToken = default);
+}
