@@ -91,3 +91,5 @@ export const EVENT_LABELS: Readonly<Record<string, string>> = {
   Event: 'Събитие',
   Holiday: 'Ваканция',
 };
+
+export const EVENT_TYPES: readonly string[] = Object.keys(EVENT_LABELS);

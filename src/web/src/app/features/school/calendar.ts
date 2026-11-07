@@ -1,8 +1,24 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { UserRole } from '../../core/auth/auth.models';
 import { AuthService } from '../../core/auth/auth.service';
 import { describeError } from '../../core/auth/problem-details';
 import { SchoolService } from '../../core/school/school.service';
-import { CalendarEvent, EVENT_LABELS } from '../../core/school/school.models';
+import {
+  CalendarEvent,
+  EVENT_LABELS,
+  EVENT_TYPES,
+  PERIODS,
+  SchoolClass,
+  SubjectItem,
+} from '../../core/school/school.models';
 
 interface Day {
   readonly date: string;
@@ -13,28 +29,63 @@ interface Day {
 }
 
 const MONTHS = [
-  'януари', 'февруари', 'март', 'април', 'май', 'юни',
-  'юли', 'август', 'септември', 'октомври', 'ноември', 'декември',
+  'януари',
+  'февруари',
+  'март',
+  'април',
+  'май',
+  'юни',
+  'юли',
+  'август',
+  'септември',
+  'октомври',
+  'ноември',
+  'декември',
 ];
 
 @Component({
   selector: 'app-calendar',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [ReactiveFormsModule],
   styleUrl: './calendar.scss',
   templateUrl: './calendar.html',
 })
 export class CalendarComponent implements OnInit {
   private readonly school = inject(SchoolService);
   private readonly auth = inject(AuthService);
+  private readonly formBuilder = inject(FormBuilder);
 
   protected readonly weekdayNames = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'нд'];
   protected readonly labels = EVENT_LABELS;
+  protected readonly eventTypes = EVENT_TYPES;
+  protected readonly periods = PERIODS;
 
   protected readonly anchor = signal(startOfMonth(new Date()));
   protected readonly events = signal<CalendarEvent[]>([]);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly selected = signal<Day | null>(null);
+
+  protected readonly canManage = computed(() => {
+    const role = this.auth.role();
+    return role === UserRole.Admin || role === UserRole.Teacher;
+  });
+
+  protected readonly formOpen = signal(false);
+  protected readonly saving = signal(false);
+  protected readonly classes = signal<SchoolClass[]>([]);
+  protected readonly subjects = signal<SubjectItem[]>([]);
+
+  protected readonly createForm = this.formBuilder.nonNullable.group({
+    type: ['Event', Validators.required],
+    title: ['', [Validators.required, Validators.maxLength(160)]],
+    startsOn: [isoDate(new Date()), Validators.required],
+    endsOn: [''],
+    schoolClassId: [''],
+    subjectId: [''],
+    period: [''],
+    description: ['', Validators.maxLength(1000)],
+  });
 
   protected readonly monthLabel = computed(() => {
     const date = this.anchor();
@@ -114,11 +165,62 @@ export class CalendarComponent implements OnInit {
 
   protected select(day: Day): void {
     this.selected.set(day.events.length > 0 ? day : null);
+
+    if (this.formOpen()) {
+      this.createForm.patchValue({ startsOn: day.date });
+    }
   }
 
-  protected canManage(): boolean {
-    const role = this.auth.role();
-    return role === 'Admin' || role === 'Teacher';
+  protected async toggleForm(): Promise<void> {
+    const opening = !this.formOpen();
+    this.formOpen.set(opening);
+
+    if (!opening || this.classes().length > 0) {
+      return;
+    }
+
+    try {
+      const [classes, subjects] = await Promise.all([
+        this.school.classes(),
+        this.school.subjects(),
+      ]);
+      this.classes.set(classes);
+      this.subjects.set(subjects);
+    } catch (error) {
+      this.error.set(describeError(error));
+    }
+  }
+
+  protected async create(): Promise<void> {
+    if (this.createForm.invalid) {
+      this.createForm.markAllAsTouched();
+      return;
+    }
+
+    const value = this.createForm.getRawValue();
+    this.error.set(null);
+    this.saving.set(true);
+
+    try {
+      await this.school.createCalendarEvent({
+        type: value.type,
+        title: value.title,
+        startsOn: value.startsOn,
+        endsOn: value.endsOn || null,
+        schoolClassId: value.schoolClassId || null,
+        subjectId: value.subjectId || null,
+        period: value.period ? Number(value.period) : null,
+        description: value.description || null,
+      });
+
+      this.createForm.reset({ type: 'Event', startsOn: value.startsOn });
+      this.formOpen.set(false);
+      await this.load();
+    } catch (error) {
+      this.error.set(describeError(error));
+    } finally {
+      this.saving.set(false);
+    }
   }
 
   protected async remove(item: CalendarEvent): Promise<void> {

@@ -40,11 +40,11 @@ Alternatives considered: **MongoDB**, **Firebase Firestore**, **SQL Server**.
 | **Flexibility** | `JSONB` columns cover the schema-less cases (test content, shuffled answer order, AI metadata) with full indexing support. Nothing is lost compared to NoSQL. |
 | **AI readiness** | The `pgvector` extension provides vector search inside the same database. No separate vector store (Pinecone, Qdrant) is needed — one entire infrastructure component saved. |
 | **Analytics** | Window functions, CTEs and materialized views cover performance statistics, trends and reports without an external tool. |
-| **Operations** | Open source, no licensing, starts with one line in Docker, and has a mature Kubernetes operator (CloudNativePG) for production. |
+| **Operations** | Open source, no licensing, and starts with one line in Docker both locally and in production. |
 
 **Why not MongoDB:** the lack of cross-collection transactional integrity and weak join support make performance calculation, parent reports and grade history disproportionately complex. The one area where it would fit (messages, logs) is covered by `JSONB` in PostgreSQL.
 
-**Why not Firebase:** it is a managed BaaS that cannot be deployed to Kubernetes — which invalidates the entire DevOps portion of the project. Firestore has no joins and no server-side aggregations; security rules across four roles, classes and subjects become untestable; and billing is per document read, which penalizes exactly the dashboard-heavy UI this platform needs. Vendor lock-in is also a weak architectural position to defend in a thesis.
+**Why not Firebase:** it is a managed BaaS that cannot be self-hosted — which invalidates the entire DevOps portion of the project. Firestore has no joins and no server-side aggregations; security rules across four roles, classes and subjects become untestable; and billing is per document read, which penalizes exactly the dashboard-heavy UI this platform needs. Vendor lock-in is also a weak architectural position to defend in a thesis.
 
 > **Firebase stays in the project in exactly one place:** Firebase Cloud Messaging for push notifications. That is a narrow, standard, free choice that does not couple the rest of the system to it.
 
@@ -72,7 +72,7 @@ Alternatives considered: **Spring Boot 3**, **NestJS**.
 | Backend | ASP.NET Core 10 (LTS) | Consistency with Angular, SignalR, EF Core |
 | Architecture | Modular monolith | Clear boundaries without distributed complexity |
 | Real-time | SignalR | Built in, with Redis backplane |
-| File storage | MinIO | S3 API, runs in both Docker and Kubernetes |
+| File storage | MinIO | S3 API, self-hosted, swappable for any S3 provider |
 | AI | Claude API | Long context, structured output, prompt caching |
 | Embeddings | bge-m3 (self-hosted) | Multilingual, strong on Bulgarian, no per-request cost |
 
@@ -95,13 +95,13 @@ The system is **one deployable application**, internally split into modules with
 
 ### 2.2 Why not microservices
 
-Having Kubernetes in the stack invites splitting into services. The opposite was chosen deliberately:
+Splitting the domain into services was considered and rejected deliberately:
 
 - The domain has **tightly coupled data** — a grade requires a student, a subject, a teacher and a term. Across separate services that means distributed transactions or eventual consistency, in a place where users expect immediate consistency.
 - The data volume (one school, or a few) is **far below the threshold** at which independently scaling services pays off.
 - Module boundaries are already enforced at the code level. If a real need arises, any module can be extracted into a standalone service without a rewrite — that is **the whole point of a modular monolith**.
 
-Kubernetes is used for what it is good at: horizontally scaling the API, rolling updates, health probes, and managing configuration and secrets.
+The modules stay in one process and one deployable unit, which is also what keeps the operational side small enough to run on a single host.
 
 ### 2.3 Internal structure of a module
 
@@ -528,7 +528,7 @@ GET    /api/v1/ai/usage
 
 ## 8. Real-time communication
 
-SignalR with a **Redis backplane**, so it keeps working across multiple replicas in Kubernetes.
+SignalR with a **Redis backplane**, so adding a second API instance later needs no code change.
 
 | Hub | Groups | Client events |
 |---|---|---|
@@ -628,7 +628,7 @@ Once an attempt is finalized, a background job collects the questions, the stude
 | File uploads | Size and MIME type limits, magic-byte verification, ClamAV scanning, storage outside the web root, short-lived presigned URLs |
 | Rate limiting | Built-in ASP.NET Core rate limiter: per IP for login, per user for AI |
 | Auditing | Every change to a grade, absence or role is written to `audit_log` |
-| Secrets | User Secrets locally; Kubernetes Secrets / Sealed Secrets in production; nothing in Git |
+| Secrets | User Secrets locally; a root-owned `.env` on the host in production; nothing in Git |
 | Personal data | Parental consent for minors, deletion on request, data minimization (GDPR) |
 | Dependencies | `dotnet list package --vulnerable` and `npm audit` in CI; Dependabot |
 
@@ -638,7 +638,7 @@ Once an attempt is finalized, a background job collects the questions, the stude
 
 ## 11. File storage
 
-**MinIO**, S3-compatible, behaves identically in local Docker and in Kubernetes.
+**MinIO**, S3-compatible, so the same code works against any S3 provider if storage moves off the host.
 
 | Bucket | Contents | Presigned URL lifetime |
 |---|---|---|
@@ -659,26 +659,44 @@ Limits: 50 MB per file, 200 MB per submission. Allowed types: PDF, DOCX, PPTX, X
 
 `docker compose up -d` starts PostgreSQL (+pgvector), Redis, MinIO, Mailpit, Seq and the embedding-model container. The API and Angular run directly on the host for fast hot reload.
 
-### 12.2 Kubernetes
+### 12.2 Production
+
+The platform serves one school. A single host sized for that load carries the whole stack, so
+production runs the same Docker Compose topology as development, with a reverse proxy in front.
 
 ```
-ingress-nginx (TLS via cert-manager)
+Caddy (TLS via Let's Encrypt, automatic renewal)
         │
    ┌────┴────┐
    ▼         ▼
-angular   api (Deployment, 2 replicas, HPA)
-(nginx)      │
-             ├── postgres (StatefulSet, CloudNativePG)
-             ├── redis (StatefulSet)
-             ├── minio (StatefulSet)
-             └── embeddings (Deployment)
+angular   api
+(static)     │
+             ├── postgres (+pgvector, named volume)
+             ├── redis
+             ├── minio (named volume)
+             └── embeddings
 ```
 
-- **Configuration:** ConfigMap for settings, Secret for credentials.
-- **Probes:** `/health/live` and `/health/ready` (ASP.NET Core Health Checks) — `ready` verifies PostgreSQL, Redis and MinIO.
-- **Migrations:** a separate Kubernetes `Job` executed before rollout — never on application startup, so replicas cannot race each other.
-- **Rolling update** with `maxUnavailable: 0`.
-- **Packaging:** a Helm chart with `values-dev.yaml` and `values-prod.yaml`.
+- **Configuration:** a `.env` file read by Compose; secrets never enter Git.
+- **Probes:** `/health/live` and `/health/ready` (ASP.NET Core Health Checks) — `ready` verifies
+  PostgreSQL, Redis and MinIO. Compose `healthcheck` blocks dependants until `ready` passes.
+- **Migrations:** a one-shot container that runs before the API starts, never on application
+  startup.
+- **Updates:** `docker compose pull && docker compose up -d` — brief downtime is acceptable for a
+  single school outside teaching hours.
+- **Backups:** a nightly `pg_dump` plus a MinIO bucket copy to off-host storage.
+
+### 12.2.1 Why not Kubernetes
+
+Kubernetes earns its complexity when there are several replicas to schedule, rolling updates with
+no downtime, and more than one node. None of that applies to one school on one host: the cluster
+would cost more to operate than the application it runs, and the thesis would spend its remaining
+time on infrastructure rather than on the platform.
+
+The application is nevertheless written so the move stays open — stateless API, configuration from
+the environment, health endpoints, S3-compatible storage and a Redis backplane for SignalR. Moving
+to Kubernetes means writing manifests, not changing code. It is listed as a direction for further
+development rather than as delivered work.
 
 ### 12.3 CI/CD (GitHub Actions)
 
@@ -689,7 +707,7 @@ push / PR
   ├─ architecture tests (NetArchTest)
   ├─ Angular build + tests
   ├─ vulnerability scan
-  └─ [on main] docker build → GHCR → helm upgrade
+  └─ [on main] docker build → GHCR → compose pull + up on the host
 ```
 
 ---

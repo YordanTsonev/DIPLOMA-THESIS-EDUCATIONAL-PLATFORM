@@ -6,11 +6,73 @@
       <span class="month">{{ monthLabel() }}</span>
       <button class="ep-button ep-button-secondary" type="button" (click)="shift(1)">›</button>
       <button class="ep-button ep-button-secondary" type="button" (click)="today()">Днес</button>
+      @if (canManage()) {
+        <button class="ep-button" type="button" (click)="toggleForm()">
+          {{ formOpen() ? 'Отказ' : 'Ново събитие' }}
+        </button>
+      }
     </div>
   </div>
 
   @if (error(); as message) {
     <p class="ep-alert is-error" role="alert">{{ message }}</p>
+  }
+
+  @if (formOpen()) {
+    <form class="event-form" [formGroup]="createForm" (ngSubmit)="create()" novalidate>
+      <div class="ep-field">
+        <label for="type">Вид</label>
+        <select id="type" formControlName="type">
+          @for (type of eventTypes; track type) {
+            <option [value]="type">{{ labels[type] }}</option>
+          }
+        </select>
+      </div>
+      <div class="ep-field grow">
+        <label for="title">Заглавие</label>
+        <input id="title" formControlName="title" maxlength="160" />
+      </div>
+      <div class="ep-field">
+        <label for="startsOn">От</label>
+        <input id="startsOn" type="date" formControlName="startsOn" />
+      </div>
+      <div class="ep-field">
+        <label for="endsOn">До</label>
+        <input id="endsOn" type="date" formControlName="endsOn" />
+      </div>
+      <div class="ep-field grow">
+        <label for="schoolClass">Клас</label>
+        <select id="schoolClass" formControlName="schoolClassId">
+          <option value="">цялото училище</option>
+          @for (item of classes(); track item.id) {
+            <option [value]="item.id">{{ item.displayName }}</option>
+          }
+        </select>
+      </div>
+      <div class="ep-field grow">
+        <label for="subject">Предмет</label>
+        <select id="subject" formControlName="subjectId">
+          <option value="">—</option>
+          @for (subject of subjects(); track subject.id) {
+            <option [value]="subject.id">{{ subject.name }}</option>
+          }
+        </select>
+      </div>
+      <div class="ep-field narrow">
+        <label for="period">Час</label>
+        <select id="period" formControlName="period">
+          <option value="">—</option>
+          @for (period of periods; track period) {
+            <option [value]="period">{{ period }}</option>
+          }
+        </select>
+      </div>
+      <div class="ep-field grow">
+        <label for="description">Описание</label>
+        <input id="description" formControlName="description" maxlength="1000" />
+      </div>
+      <button class="ep-button" type="submit" [disabled]="saving()">Запазване</button>
+    </form>
   }
 
   @if (loading()) {
@@ -52,7 +114,9 @@
       @for (item of day.events; track item.id) {
         <li>
           <div class="detail-head">
-            <span class="chip" [attr.data-type]="item.type">{{ labels[item.type] ?? item.type }}</span>
+            <span class="chip" [attr.data-type]="item.type">{{
+              labels[item.type] ?? item.type
+            }}</span>
             <strong>{{ item.title }}</strong>
           </div>
           <div class="detail-meta">
@@ -93,7 +157,9 @@
     <ul class="upcoming-list">
       @for (item of upcoming(); track item.id) {
         <li>
-          <span class="chip" [attr.data-type]="item.type">{{ labels[item.type] ?? item.type }}</span>
+          <span class="chip" [attr.data-type]="item.type">{{
+            labels[item.type] ?? item.type
+          }}</span>
           <span class="upcoming-title">{{ item.title }}</span>
           <span class="ep-muted">{{ item.startsOn }}</span>
         </li>
