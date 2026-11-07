@@ -1,0 +1,180 @@
+<section class="ep-card">
+  <div class="head">
+    <h1>Домашни работи</h1>
+    @if (subjects().length > 0) {
+      <button class="ep-button" type="button" (click)="toggleForm()">
+        {{ formOpen() ? 'Отказ' : 'Ново домашно' }}
+      </button>
+    }
+  </div>
+
+  @if (error(); as message) {
+    <p class="ep-alert is-error" role="alert">{{ message }}</p>
+  }
+  @if (notice(); as message) {
+    <p class="ep-alert is-success" role="status">{{ message }}</p>
+  }
+
+  @if (formOpen()) {
+    <form class="create-form" [formGroup]="createForm" (ngSubmit)="create()" novalidate>
+      <div class="ep-field grow">
+        <label for="subject">Предмет и клас</label>
+        <select id="subject" formControlName="teachingAssignmentId">
+          @for (subject of subjects(); track subject.id) {
+            <option [value]="subject.id">
+              {{ subject.subjectName }} — {{ subject.schoolClassName }}
+            </option>
+          }
+        </select>
+      </div>
+      <div class="ep-field grow">
+        <label for="title">Заглавие</label>
+        <input id="title" formControlName="title" maxlength="160" />
+      </div>
+      <div class="ep-field">
+        <label for="dueOn">Срок</label>
+        <input id="dueOn" type="date" formControlName="dueOn" />
+      </div>
+      <div class="ep-field checkbox">
+        <label for="isGraded">
+          <input id="isGraded" type="checkbox" formControlName="isGraded" />
+          с оценка
+        </label>
+      </div>
+      <div class="ep-field full">
+        <label for="description">Условие</label>
+        <textarea
+          id="description"
+          rows="3"
+          formControlName="description"
+          maxlength="4000"
+        ></textarea>
+      </div>
+      <button class="ep-button" type="submit" [disabled]="busy()">Задаване</button>
+    </form>
+  }
+
+  @if (loading()) {
+    <p class="ep-muted">Зареждане…</p>
+  } @else if (subjects().length === 0) {
+    <p class="ep-muted">Нямате преподавани предмети.</p>
+  } @else if (assignments().length === 0) {
+    <p class="ep-muted">Още не сте задали домашни.</p>
+  } @else {
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Заглавие</th>
+          <th scope="col">Предмет</th>
+          <th scope="col">Срок</th>
+          <th scope="col">Предадени</th>
+          <th scope="col">Проверени</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of assignments(); track item.id) {
+          <tr
+            class="assignment-row"
+            [class.is-active]="selected()?.id === item.id"
+            (click)="open(item)"
+          >
+            <td>
+              {{ item.title }}
+              @if (item.isGraded) {
+                <span class="badge is-graded">с оценка</span>
+              }
+            </td>
+            <td class="ep-muted">{{ item.subjectName }} — {{ item.schoolClassName }}</td>
+            <td [class.is-overdue]="item.isOverdue">{{ item.dueOn }}</td>
+            <td>{{ item.submissionCount }} / {{ item.studentCount }}</td>
+            <td>{{ item.reviewedCount }}</td>
+            <td>
+              <button
+                class="ep-button ep-button-secondary"
+                type="button"
+                (click)="remove(item); $event.stopPropagation()"
+              >
+                Премахване
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</section>
+
+@if (selected(); as assignment) {
+  <section class="ep-card">
+    <h2>{{ assignment.title }}</h2>
+    @if (assignment.description) {
+      <p class="description">{{ assignment.description }}</p>
+    }
+
+    @if (submissions().length === 0) {
+      <p class="ep-muted">Още никой не е предал.</p>
+    } @else {
+      <ul class="submission-list">
+        @for (submission of submissions(); track submission.id) {
+          <li>
+            <div class="submission-head">
+              <strong>{{ submission.studentName }}</strong>
+              <span class="ep-muted">{{ submission.submittedAt | date: 'short' }}</span>
+              @if (submission.isLate) {
+                <span class="badge is-late">закъсняло</span>
+              }
+              @if (submission.mark !== null) {
+                <span class="mark" [attr.data-value]="submission.mark >= 3 ? 'pass' : 'fail'">
+                  {{ submission.mark | number: '1.0-2' }}
+                </span>
+              }
+              @if (submission.gradeId) {
+                <span class="badge is-graded">в дневника</span>
+              }
+            </div>
+            <p class="submission-text">{{ submission.text }}</p>
+            @if (submission.feedback) {
+              <p class="feedback">{{ submission.feedback }}</p>
+            }
+
+            @if (reviewForm.getRawValue().submissionId === submission.id) {
+              <form class="review-form" [formGroup]="reviewForm" (ngSubmit)="review()" novalidate>
+                @if (assignment.isGraded) {
+                  <div class="ep-field narrow">
+                    <label [attr.for]="'mark-' + submission.id">Оценка</label>
+                    <input
+                      [id]="'mark-' + submission.id"
+                      type="number"
+                      min="2"
+                      max="6"
+                      step="0.25"
+                      formControlName="mark"
+                    />
+                  </div>
+                }
+                <div class="ep-field grow">
+                  <label [attr.for]="'feedback-' + submission.id">Коментар</label>
+                  <input
+                    [id]="'feedback-' + submission.id"
+                    formControlName="feedback"
+                    maxlength="1000"
+                  />
+                </div>
+                <button class="ep-button" type="submit" [disabled]="busy()">Записване</button>
+              </form>
+            } @else {
+              <button
+                class="ep-button ep-button-secondary"
+                type="button"
+                (click)="startReview(submission)"
+              >
+                {{ submission.reviewedAt ? 'Промяна на проверката' : 'Проверка' }}
+              </button>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+}

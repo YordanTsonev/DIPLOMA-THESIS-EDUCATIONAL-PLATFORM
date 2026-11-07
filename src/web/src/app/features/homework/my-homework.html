@@ -1,0 +1,117 @@
+<section class="ep-card">
+  <div class="head">
+    <h1>Домашни работи</h1>
+    @if (pending() > 0) {
+      <span class="pending">за предаване: {{ pending() }}</span>
+    }
+  </div>
+
+  @if (error(); as message) {
+    <p class="ep-alert is-error" role="alert">{{ message }}</p>
+  }
+  @if (notice(); as message) {
+    <p class="ep-alert is-success" role="status">{{ message }}</p>
+  }
+
+  @if (loading()) {
+    <p class="ep-muted">Зареждане…</p>
+  } @else if (assignments().length === 0) {
+    <p class="ep-muted">Нямате зададени домашни.</p>
+  } @else {
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Заглавие</th>
+          <th scope="col">Предмет</th>
+          <th scope="col">Срок</th>
+          <th scope="col">Състояние</th>
+          <th scope="col">Оценка</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of assignments(); track item.id) {
+          <tr
+            class="assignment-row"
+            [class.is-active]="selected()?.id === item.id"
+            (click)="open(item)"
+          >
+            <td>
+              {{ item.title }}
+              @if (item.isGraded) {
+                <span class="badge is-graded">с оценка</span>
+              }
+            </td>
+            <td class="ep-muted">{{ item.subjectName }}</td>
+            <td [class.is-overdue]="item.isOverdue && !item.submission">{{ item.dueOn }}</td>
+            <td>
+              <span class="status" [attr.data-status]="status(item)">{{ status(item) }}</span>
+            </td>
+            <td>
+              @if (item.submission?.mark !== null && item.submission?.mark !== undefined) {
+                <span
+                  class="mark"
+                  [attr.data-value]="item.submission!.mark! >= 3 ? 'pass' : 'fail'"
+                >
+                  {{ item.submission!.mark | number: '1.0-2' }}
+                </span>
+              } @else {
+                <span class="ep-muted">—</span>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</section>
+
+@if (selected(); as item) {
+  <section class="ep-card">
+    <h2>{{ item.title }}</h2>
+    <p class="meta ep-muted">{{ item.subjectName }} · срок {{ item.dueOn }}</p>
+
+    @if (item.description) {
+      <p class="description">{{ item.description }}</p>
+    }
+
+    @if (item.submission; as submission) {
+      <div class="done">
+        <span class="ep-muted">предадено на {{ submission.submittedAt | date: 'short' }}</span>
+        @if (submission.isLate) {
+          <span class="badge is-late">със закъснение</span>
+        }
+      </div>
+
+      @if (submission.reviewedAt) {
+        <div class="review">
+          <h3>Проверено</h3>
+          @if (submission.mark !== null) {
+            <span class="mark" [attr.data-value]="submission.mark >= 3 ? 'pass' : 'fail'">
+              {{ submission.mark | number: '1.0-2' }}
+            </span>
+          }
+          @if (submission.gradeId) {
+            <span class="badge is-graded">нанесена в дневника</span>
+          }
+          @if (submission.feedback) {
+            <p class="feedback">{{ submission.feedback }}</p>
+          } @else {
+            <p class="ep-muted">Без коментар от учителя.</p>
+          }
+        </div>
+      }
+    }
+
+    @if (!selected()?.submission?.reviewedAt) {
+      <form [formGroup]="submitForm" (ngSubmit)="submit()" novalidate>
+        <div class="ep-field">
+          <label for="text">Вашият отговор</label>
+          <textarea id="text" rows="8" formControlName="text" maxlength="8000"></textarea>
+        </div>
+        <button class="ep-button" type="submit" [disabled]="busy()">
+          {{ item.submission ? 'Презаписване' : 'Предаване' }}
+        </button>
+      </form>
+    }
+  </section>
+}
