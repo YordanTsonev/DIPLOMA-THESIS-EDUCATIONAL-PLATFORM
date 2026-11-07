@@ -43,6 +43,7 @@
     <Project Path="tests/EduPlatform.Api.IntegrationTests/EduPlatform.Api.IntegrationTests.csproj" />
     <Project Path="tests/EduPlatform.ArchitectureTests/EduPlatform.ArchitectureTests.csproj" />
     <Project Path="tests/EduPlatform.Modules.Gradebook.UnitTests/EduPlatform.Modules.Gradebook.UnitTests.csproj" />
+    <Project Path="tests/EduPlatform.Modules.Homework.UnitTests/EduPlatform.Modules.Homework.UnitTests.csproj" />
     <Project Path="tests/EduPlatform.Modules.Identity.UnitTests/EduPlatform.Modules.Identity.UnitTests.csproj" />
     <Project Path="tests/EduPlatform.Modules.SchoolStructure.UnitTests/EduPlatform.Modules.SchoolStructure.UnitTests.csproj" />
   </Folder>
