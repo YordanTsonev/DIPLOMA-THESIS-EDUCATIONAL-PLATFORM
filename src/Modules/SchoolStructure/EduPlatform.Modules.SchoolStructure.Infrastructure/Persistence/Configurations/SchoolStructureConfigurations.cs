@@ -197,3 +197,23 @@ internal sealed class CalendarEventConfiguration : IEntityTypeConfiguration<Cale
             .OnDelete(DeleteBehavior.SetNull);
     }
 }
+
+internal sealed class ParentChildConfiguration : IEntityTypeConfiguration<ParentChild>
+{
+    public void Configure(EntityTypeBuilder<ParentChild> builder)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        builder.ToTable("parent_children");
+        builder.HasKey(link => link.Id);
+
+        builder.Property(link => link.ParentUserId).IsRequired();
+        builder.Property(link => link.StudentUserId).IsRequired();
+        builder.Property(link => link.LinkedAt).IsRequired();
+
+        builder.Ignore(link => link.DomainEvents);
+
+        builder.HasIndex(link => new { link.ParentUserId, link.StudentUserId }).IsUnique();
+        builder.HasIndex(link => link.StudentUserId);
+    }
+}

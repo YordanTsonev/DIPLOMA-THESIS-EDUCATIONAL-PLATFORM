@@ -93,6 +93,18 @@ internal sealed class SchoolStructureRepository(SchoolStructureDbContext dbConte
 
     public void AddAssignment(TeachingAssignment assignment) => dbContext.TeachingAssignments.Add(assignment);
 
+    public Task<ParentChild?> FindParentLinkAsync(
+        Guid parentUserId,
+        Guid studentUserId,
+        CancellationToken cancellationToken = default) =>
+        dbContext.ParentChildren.SingleOrDefaultAsync(
+            link => link.ParentUserId == parentUserId && link.StudentUserId == studentUserId,
+            cancellationToken);
+
+    public void AddParentLink(ParentChild link) => dbContext.ParentChildren.Add(link);
+
+    public void RemoveParentLink(ParentChild link) => dbContext.ParentChildren.Remove(link);
+
     public Task SaveChangesAsync(CancellationToken cancellationToken = default) =>
         dbContext.SaveChangesAsync(cancellationToken);
 }

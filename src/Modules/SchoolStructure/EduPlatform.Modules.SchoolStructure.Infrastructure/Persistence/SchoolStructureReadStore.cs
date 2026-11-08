@@ -353,12 +353,85 @@ internal sealed class SchoolStructureReadStore(SchoolStructureDbContext dbContex
                 : await ListAssignmentsAsync(schoolClassId, null, cancellationToken).ConfigureAwait(false);
         }
 
+        if (string.Equals(role, "Parent", StringComparison.Ordinal))
+        {
+            var children = await ListChildrenAsync(userId, cancellationToken).ConfigureAwait(false);
+
+            var classes = children
+                .Where(child => child.SchoolClassId is not null)
+                .Select(child => child.SchoolClassId!.Value)
+                .Distinct()
+                .ToList();
+
+            if (classes.Count == 0)
+            {
+                return [];
+            }
+
+            var all = new List<TeachingAssignmentDto>();
+
+            foreach (var schoolClassId in classes)
+            {
+                all.AddRange(
+                    await ListAssignmentsAsync(schoolClassId, null, cancellationToken).ConfigureAwait(false));
+            }
+
+            return all;
+        }
+
         if (string.Equals(role, "Admin", StringComparison.Ordinal))
         {
             return await ListAssignmentsAsync(null, null, cancellationToken).ConfigureAwait(false);
         }
 
         return [];
+    }
+
+    public async Task<IReadOnlyList<ChildDto>> ListChildrenAsync(
+        Guid parentUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var studentIds = await dbContext.ParentChildren
+            .AsNoTracking()
+            .Where(link => link.ParentUserId == parentUserId)
+            .Select(link => link.StudentUserId)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        if (studentIds.Count == 0)
+        {
+            return [];
+        }
+
+        var people = await users.FindByIdsAsync(studentIds, cancellationToken).ConfigureAwait(false);
+        var byId = people.ToDictionary(person => person.Id);
+        var result = new List<ChildDto>(studentIds.Count);
+
+        foreach (var studentId in studentIds)
+        {
+            if (!byId.TryGetValue(studentId, out var person))
+            {
+                continue;
+            }
+
+            var schoolClassId = await FindClassOfStudentAsync(studentId, cancellationToken).ConfigureAwait(false);
+
+            string? className = null;
+
+            if (schoolClassId is { } classId)
+            {
+                var schoolClass = await dbContext.SchoolClasses
+                    .AsNoTracking()
+                    .SingleOrDefaultAsync(item => item.Id == classId, cancellationToken)
+                    .ConfigureAwait(false);
+
+                className = schoolClass?.DisplayName;
+            }
+
+            result.Add(new ChildDto(studentId, person.FullName, person.Email, schoolClassId, className));
+        }
+
+        return result;
     }
 
     public async Task<TeachingAssignmentDto?> FindAssignmentAsync(
