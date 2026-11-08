@@ -49,6 +49,24 @@ internal static class HomeworkEndpoints
             .WithName("ListMyHomework")
             .Produces<IReadOnlyList<StudentAssignmentDto>>();
 
+        group.MapGet("/students/{studentUserId:guid}", async (
+                Guid studentUserId,
+                ICurrentUser currentUser,
+                IDispatcher dispatcher,
+                CancellationToken cancellationToken) =>
+            {
+                if (currentUser.UserId is not { } userId)
+                {
+                    return Results.Unauthorized();
+                }
+
+                return Results.Ok(await dispatcher.QueryAsync(
+                    new ListHomeworkOfChildQuery(studentUserId, userId), cancellationToken));
+            })
+            .RequireAuthorization(AuthorizationPolicies.ParentOnly)
+            .WithName("ListHomeworkOfChild")
+            .Produces<IReadOnlyList<StudentAssignmentDto>>();
+
         group.MapGet("/{id:guid}/submissions", async (
                 Guid id,
                 ICurrentUser currentUser,
