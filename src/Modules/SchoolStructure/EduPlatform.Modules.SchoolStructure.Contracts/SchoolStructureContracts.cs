@@ -65,8 +65,19 @@ public sealed record CalendarEventDto(
     int? Period,
     bool IsSchoolWide);
 
+public sealed record ChildDto(
+    Guid StudentUserId,
+    string FullName,
+    string Email,
+    Guid? SchoolClassId,
+    string? SchoolClassName);
+
 public interface ISchoolDirectory
 {
+    Task<IReadOnlyList<ChildDto>> ListChildrenAsync(
+        Guid parentUserId,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<TeachingAssignmentDto>> ListAssignmentsForUserAsync(
         Guid userId,
         string role,
