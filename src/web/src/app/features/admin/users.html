@@ -44,7 +44,9 @@
     } @else {
       <div class="table-scroll">
         <table>
-          <caption class="sr-only">Списък с потребители</caption>
+          <caption class="sr-only">
+            Списък с потребители
+          </caption>
           <thead>
             <tr>
               <th scope="col">Име</th>
@@ -90,6 +92,15 @@
                   >
                     {{ user.isActive ? 'Деактивиране' : 'Активиране' }}
                   </button>
+                  @if (user.role === 'Parent') {
+                    <button
+                      class="ep-button ep-button-secondary"
+                      type="button"
+                      (click)="openChildren(user)"
+                    >
+                      Деца
+                    </button>
+                  }
                 </td>
               </tr>
             }
@@ -144,7 +155,12 @@
       </div>
       <div class="ep-field">
         <label for="newPassword">Начална парола</label>
-        <input id="newPassword" type="password" formControlName="password" autocomplete="new-password" />
+        <input
+          id="newPassword"
+          type="password"
+          formControlName="password"
+          autocomplete="new-password"
+        />
       </div>
       <div class="ep-field">
         <label for="newRole">Роля</label>
@@ -161,3 +177,50 @@
     </button>
   </form>
 </section>
+
+@if (linkingParent(); as parent) {
+  <section class="ep-card">
+    <h2>Деца на {{ parent.fullName }}</h2>
+
+    @if (children().length === 0) {
+      <p class="ep-muted">Този родител още не е свързан с дете.</p>
+    } @else {
+      <ul class="child-list">
+        @for (child of children(); track child.studentUserId) {
+          <li>
+            <strong>{{ child.fullName }}</strong>
+            <span class="ep-muted">{{ child.schoolClassName ?? 'без клас' }}</span>
+            <span class="ep-muted">{{ child.email }}</span>
+            <button
+              class="ep-button ep-button-secondary"
+              type="button"
+              (click)="unlinkChild(child)"
+            >
+              Премахване
+            </button>
+          </li>
+        }
+      </ul>
+    }
+
+    <div class="link-row">
+      <div class="ep-field grow">
+        <label for="childToAdd">Свързване с ученик</label>
+        <select id="childToAdd" (change)="chooseChild($event)">
+          <option value="">— изберете —</option>
+          @for (student of unlinkedStudents(); track student.id) {
+            <option [value]="student.id">{{ student.fullName }} ({{ student.email }})</option>
+          }
+        </select>
+      </div>
+      <button
+        class="ep-button"
+        type="button"
+        [disabled]="childToAdd() === ''"
+        (click)="linkChild()"
+      >
+        Свързване
+      </button>
+    </div>
+  </section>
+}

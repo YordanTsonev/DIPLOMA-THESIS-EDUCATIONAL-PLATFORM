@@ -107,3 +107,37 @@ td select {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+.child-list {
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.child-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border: 1px solid var(--ep-line);
+  border-radius: 8px;
+}
+
+.link-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+
+  .ep-field {
+    margin-bottom: 0;
+  }
+
+  .grow {
+    flex: 1;
+    min-width: 220px;
+  }
+}
