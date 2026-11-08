@@ -47,4 +47,6 @@ public interface IGradebookWriter
         Guid teacherUserId,
         string? comment,
         CancellationToken cancellationToken = default);
+
+    Task RemoveHomeworkGradeAsync(Guid gradeId, CancellationToken cancellationToken = default);
 }

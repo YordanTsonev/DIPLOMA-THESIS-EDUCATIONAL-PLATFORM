@@ -143,16 +143,7 @@ public sealed class Submission : AggregateRoot
                 throw new DomainException($"A mark must be between {MinMark:0.00} and {MaxMark:0.00}.");
             }
 
-            if (GradeId is not null && rounded != Mark)
-            {
-                throw new DomainException("The mark has already been entered in the gradebook.");
-            }
-
             Mark = rounded;
-        }
-        else if (GradeId is not null)
-        {
-            throw new DomainException("The mark has already been entered in the gradebook.");
         }
 
         var trimmed = feedback?.Trim();
@@ -166,6 +157,8 @@ public sealed class Submission : AggregateRoot
         ReviewedByUserId = reviewerId;
         ReviewedAt = DateTimeOffset.UtcNow;
     }
+
+    public void DetachGrade() => GradeId = null;
 
     public void AttachGrade(Guid gradeId)
     {
