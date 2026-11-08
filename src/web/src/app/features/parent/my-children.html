@@ -1,0 +1,144 @@
+<section class="ep-card">
+  <h1>Моите деца</h1>
+
+  @if (error(); as message) {
+    <p class="ep-alert is-error" role="alert">{{ message }}</p>
+  }
+
+  @if (children().length === 0) {
+    <p class="ep-muted">Още не сте свързани с дете. Обърнете се към администратора на училището.</p>
+  } @else {
+    <div class="child-tabs">
+      @for (child of children(); track child.studentUserId) {
+        <button
+          type="button"
+          class="tab"
+          [class.is-active]="selected()?.studentUserId === child.studentUserId"
+          (click)="select(child)"
+        >
+          {{ child.fullName }}
+          <span class="tab-meta">{{ child.schoolClassName ?? 'без клас' }}</span>
+        </button>
+      }
+    </div>
+  }
+</section>
+
+@if (loading()) {
+  <section class="ep-card">
+    <p class="ep-muted">Зареждане…</p>
+  </section>
+} @else if (selected()) {
+  @if (report(); as data) {
+    <section class="ep-card">
+      <div class="head">
+        <h2>Успех</h2>
+        @if (data.overallAverage !== null) {
+          <div class="overall">
+            <span class="overall-label">общ успех</span>
+            <span class="overall-value">{{ data.overallAverage | number: '1.2-2' }}</span>
+          </div>
+        }
+      </div>
+
+      @if (data.subjects.length === 0) {
+        <p class="ep-muted">Няма предмети.</p>
+      } @else {
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Предмет</th>
+              <th scope="col">Оценки</th>
+              <th scope="col">Среден</th>
+              <th scope="col">Отсъствия</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (subject of data.subjects; track subject.teachingAssignmentId) {
+              <tr>
+                <td>{{ subject.subjectName }}</td>
+                <td>
+                  @if (subject.grades.length === 0) {
+                    <span class="ep-muted">няма</span>
+                  } @else {
+                    @for (grade of subject.grades; track grade.id) {
+                      <span
+                        class="mark"
+                        [attr.data-value]="grade.value >= 3 ? 'pass' : 'fail'"
+                        [attr.title]="reasonLabels[grade.reason] ?? grade.reason"
+                      >
+                        {{ grade.value | number: '1.0-2' }}
+                      </span>
+                    }
+                  }
+                </td>
+                <td>
+                  @if (subject.average !== null) {
+                    <strong>{{ subject.average | number: '1.2-2' }}</strong>
+                  } @else {
+                    <span class="ep-muted">няма</span>
+                  }
+                </td>
+                <td class="absences">
+                  @if (subject.unexcusedAbsences > 0) {
+                    <span class="badge is-bad">{{ subject.unexcusedAbsences }} неизв.</span>
+                  }
+                  @if (subject.excusedAbsences > 0) {
+                    <span class="badge">{{ subject.excusedAbsences }} изв.</span>
+                  }
+                  @if (subject.lateArrivals > 0) {
+                    <span class="badge is-warn">{{ subject.lateArrivals }} закъсн.</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
+  }
+
+  <section class="ep-card">
+    <h2>Домашни работи</h2>
+
+    @if (homework().length === 0) {
+      <p class="ep-muted">Няма зададени домашни.</p>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Заглавие</th>
+            <th scope="col">Предмет</th>
+            <th scope="col">Срок</th>
+            <th scope="col">Състояние</th>
+            <th scope="col">Оценка</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of homework(); track item.id) {
+            <tr>
+              <td>{{ item.title }}</td>
+              <td class="ep-muted">{{ item.subjectName }}</td>
+              <td>{{ item.dueOn }}</td>
+              <td>
+                <span class="status" [attr.data-status]="status(item)">{{ status(item) }}</span>
+              </td>
+              <td>
+                @if (item.submission?.mark !== null && item.submission?.mark !== undefined) {
+                  <span
+                    class="mark"
+                    [attr.data-value]="item.submission!.mark! >= 3 ? 'pass' : 'fail'"
+                  >
+                    {{ item.submission!.mark | number: '1.0-2' }}
+                  </span>
+                } @else {
+                  <span class="ep-muted">—</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </section>
+}

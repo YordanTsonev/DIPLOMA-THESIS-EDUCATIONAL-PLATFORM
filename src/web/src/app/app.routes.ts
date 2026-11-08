@@ -157,6 +157,12 @@ export const routes: Routes = [
             title: 'Начало — EduPlatform',
           },
           {
+            path: 'children',
+            loadComponent: () =>
+              import('./features/parent/my-children').then((m) => m.MyChildrenComponent),
+            title: 'Моите деца — EduPlatform',
+          },
+          {
             path: 'calendar',
             loadComponent: () =>
               import('./features/school/calendar').then((m) => m.CalendarComponent),
