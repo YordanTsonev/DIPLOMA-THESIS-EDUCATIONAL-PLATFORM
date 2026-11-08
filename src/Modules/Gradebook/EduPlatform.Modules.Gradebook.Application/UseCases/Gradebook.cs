@@ -80,7 +80,8 @@ internal sealed class GetClassGradebookHandler(
         grades.Count == 0 ? null : Math.Round(grades.Average(grade => grade.Value), 2, MidpointRounding.AwayFromZero);
 }
 
-public sealed record GetStudentReportQuery(Guid StudentUserId) : IQuery<StudentReportDto>;
+public sealed record GetStudentReportQuery(Guid StudentUserId, Guid CallerUserId, string CallerRole)
+    : IQuery<StudentReportDto>;
 
 internal sealed class GetStudentReportHandler(
     IGradebookReadStore store,
@@ -91,6 +92,8 @@ internal sealed class GetStudentReportHandler(
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(query);
+
+        await EnsureMaySeeAsync(school, query, cancellationToken).ConfigureAwait(false);
 
         var assignments = await school
             .ListAssignmentsForUserAsync(query.StudentUserId, "Student", cancellationToken)
@@ -128,6 +131,35 @@ internal sealed class GetStudentReportHandler(
         var name = grades.Select(grade => grade.StudentName).FirstOrDefault() ?? string.Empty;
 
         return new StudentReportDto(query.StudentUserId, name, subjects, overall);
+    }
+
+    private static async Task EnsureMaySeeAsync(
+        ISchoolDirectory school,
+        GetStudentReportQuery query,
+        CancellationToken cancellationToken)
+    {
+        if (query.CallerUserId == query.StudentUserId)
+        {
+            return;
+        }
+
+        if (query.CallerRole is "Admin" or "Teacher")
+        {
+            return;
+        }
+
+        if (query.CallerRole == "Parent")
+        {
+            var children = await school.ListChildrenAsync(query.CallerUserId, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (children.Any(child => child.StudentUserId == query.StudentUserId))
+            {
+                return;
+            }
+        }
+
+        throw new ForbiddenException("This student is not yours to see.");
     }
 }
 

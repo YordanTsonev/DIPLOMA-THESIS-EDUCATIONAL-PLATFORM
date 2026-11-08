@@ -100,6 +100,38 @@ internal sealed class ListMyHomeworkHandler(
     }
 }
 
+public sealed record ListHomeworkOfChildQuery(Guid StudentUserId, Guid ParentUserId)
+    : IQuery<IReadOnlyList<StudentAssignmentDto>>;
+
+internal sealed class ListHomeworkOfChildHandler(
+    IHomeworkReadStore store,
+    ISchoolDirectory school) : IQueryHandler<ListHomeworkOfChildQuery, IReadOnlyList<StudentAssignmentDto>>
+{
+    public async Task<IReadOnlyList<StudentAssignmentDto>> HandleAsync(
+        ListHomeworkOfChildQuery query,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        var children = await school.ListChildrenAsync(query.ParentUserId, cancellationToken).ConfigureAwait(false);
+
+        if (!children.Any(child => child.StudentUserId == query.StudentUserId))
+        {
+            throw new ForbiddenException("This student is not yours to see.");
+        }
+
+        var assignments = await school
+            .ListAssignmentsForUserAsync(query.StudentUserId, "Student", cancellationToken)
+            .ConfigureAwait(false);
+
+        var ids = assignments.Select(item => item.Id).ToArray();
+
+        return ids.Length == 0
+            ? []
+            : await store.ListForStudentAsync(ids, query.StudentUserId, cancellationToken).ConfigureAwait(false);
+    }
+}
+
 public sealed record CreateAssignmentCommand(
     Guid TeachingAssignmentId,
     string Title,
