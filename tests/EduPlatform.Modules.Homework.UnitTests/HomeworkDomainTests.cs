@@ -182,24 +182,38 @@ public sealed class SubmissionTests
     }
 
     [Fact]
-    public void A_mark_already_in_the_gradebook_cannot_be_changed()
+    public void A_mark_already_in_the_gradebook_can_be_corrected()
     {
         var submission = Create();
         submission.Review(5m, null, TeacherId, assignmentIsGraded: true);
         submission.AttachGrade(Guid.CreateVersion7());
 
-        Should.Throw<DomainException>(() => submission.Review(6m, null, TeacherId, assignmentIsGraded: true));
+        submission.Review(6m, null, TeacherId, assignmentIsGraded: true);
+
+        submission.Mark.ShouldBe(6m);
     }
 
     [Fact]
-    public void Feedback_can_still_be_changed_after_the_mark_reached_the_gradebook()
+    public void Feedback_can_be_changed_without_touching_the_mark()
     {
         var submission = Create();
         submission.Review(5m, "първо", TeacherId, assignmentIsGraded: true);
-        submission.AttachGrade(Guid.CreateVersion7());
-        submission.Review(5m, "второ", TeacherId, assignmentIsGraded: true);
+        submission.Review(null, "второ", TeacherId, assignmentIsGraded: true);
 
         submission.Feedback.ShouldBe("второ");
+        submission.Mark.ShouldBe(5m);
+    }
+
+    [Fact]
+    public void Detaching_the_grade_leaves_the_mark_in_place()
+    {
+        var submission = Create();
+        submission.Review(5m, null, TeacherId, assignmentIsGraded: true);
+        submission.AttachGrade(Guid.CreateVersion7());
+
+        submission.DetachGrade();
+
+        submission.GradeId.ShouldBeNull();
         submission.Mark.ShouldBe(5m);
     }
 

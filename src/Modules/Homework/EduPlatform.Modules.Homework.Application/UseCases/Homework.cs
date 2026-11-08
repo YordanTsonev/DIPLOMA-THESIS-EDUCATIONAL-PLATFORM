@@ -337,12 +337,16 @@ internal sealed class ReviewSubmissionHandler(
             .EnsureTeachesAsync(school, command.TeacherUserId, assignment.TeachingAssignmentId, cancellationToken)
             .ConfigureAwait(false);
 
-        var wasGraded = submission.GradeId is not null;
-
         submission.Review(command.Mark, command.Feedback, command.TeacherUserId, assignment.IsGraded);
 
-        if (!wasGraded && submission.Mark is { } mark)
+        if (submission.Mark is { } mark)
         {
+            if (submission.GradeId is { } previous)
+            {
+                await gradebook.RemoveHomeworkGradeAsync(previous, cancellationToken).ConfigureAwait(false);
+                submission.DetachGrade();
+            }
+
             var grade = await gradebook.GiveHomeworkGradeAsync(
                     submission.StudentUserId,
                     assignment.TeachingAssignmentId,
