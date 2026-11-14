@@ -8,7 +8,7 @@ using FluentValidation;
 
 namespace EduPlatform.Modules.Gradebook.Application.UseCases;
 
-public sealed record GetClassGradebookQuery(Guid TeachingAssignmentId, Guid TeacherUserId)
+public sealed record GetClassGradebookQuery(Guid TeachingAssignmentId, Guid TeacherUserId, string Role)
     : IQuery<ClassGradebookDto>;
 
 public sealed record ClassGradebookDto(
@@ -39,6 +39,11 @@ internal sealed class GetClassGradebookHandler(
         var assignment = await school.FindAssignmentAsync(query.TeachingAssignmentId, cancellationToken)
             .ConfigureAwait(false)
             ?? throw new DomainException("Teaching assignment not found.");
+
+        if (query.Role == "Teacher" && assignment.TeacherUserId != query.TeacherUserId)
+        {
+            throw new ForbiddenException("You do not teach this subject to this class.");
+        }
 
         var students = await school
             .ListClassStudentsAsync(assignment.SchoolClassId, cancellationToken)
@@ -75,7 +80,8 @@ internal sealed class GetClassGradebookHandler(
         grades.Count == 0 ? null : Math.Round(grades.Average(grade => grade.Value), 2, MidpointRounding.AwayFromZero);
 }
 
-public sealed record GetStudentReportQuery(Guid StudentUserId) : IQuery<StudentReportDto>;
+public sealed record GetStudentReportQuery(Guid StudentUserId, Guid CallerUserId, string CallerRole)
+    : IQuery<StudentReportDto>;
 
 internal sealed class GetStudentReportHandler(
     IGradebookReadStore store,
@@ -86,6 +92,8 @@ internal sealed class GetStudentReportHandler(
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(query);
+
+        await EnsureMaySeeAsync(school, query, cancellationToken).ConfigureAwait(false);
 
         var assignments = await school
             .ListAssignmentsForUserAsync(query.StudentUserId, "Student", cancellationToken)
@@ -107,7 +115,7 @@ internal sealed class GetStudentReportHandler(
             return new SubjectPerformanceDto(
                 assignment.Id,
                 assignment.SubjectName,
-                own.Select(grade => grade.Value).ToList(),
+                own,
                 GetClassGradebookHandler.Average(own),
                 missed.Count(item => item.Kind == nameof(AbsenceKind.Unexcused)),
                 missed.Count(item => item.Kind == nameof(AbsenceKind.Excused)),
@@ -123,6 +131,35 @@ internal sealed class GetStudentReportHandler(
         var name = grades.Select(grade => grade.StudentName).FirstOrDefault() ?? string.Empty;
 
         return new StudentReportDto(query.StudentUserId, name, subjects, overall);
+    }
+
+    private static async Task EnsureMaySeeAsync(
+        ISchoolDirectory school,
+        GetStudentReportQuery query,
+        CancellationToken cancellationToken)
+    {
+        if (query.CallerUserId == query.StudentUserId)
+        {
+            return;
+        }
+
+        if (query.CallerRole is "Admin" or "Teacher")
+        {
+            return;
+        }
+
+        if (query.CallerRole == "Parent")
+        {
+            var children = await school.ListChildrenAsync(query.CallerUserId, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (children.Any(child => child.StudentUserId == query.StudentUserId))
+            {
+                return;
+            }
+        }
+
+        throw new ForbiddenException("This student is not yours to see.");
     }
 }
 

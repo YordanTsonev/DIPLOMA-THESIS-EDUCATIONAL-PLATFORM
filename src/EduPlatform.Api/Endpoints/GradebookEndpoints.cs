@@ -21,13 +21,14 @@ internal static class GradebookEndpoints
                 IDispatcher dispatcher,
                 CancellationToken cancellationToken) =>
             {
-                if (currentUser.UserId is not { } userId)
+                if (currentUser.UserId is not { } userId || currentUser.Role is not { } role)
                 {
                     return Results.Unauthorized();
                 }
 
                 var view = await dispatcher.QueryAsync(
-                    new GetClassGradebookQuery(teachingAssignmentId, userId), cancellationToken);
+                    new GetClassGradebookQuery(teachingAssignmentId, userId, role.ToString()),
+                    cancellationToken);
 
                 return Results.Ok(view);
             })
@@ -45,7 +46,14 @@ internal static class GradebookEndpoints
                     return Results.Unauthorized();
                 }
 
-                var report = await dispatcher.QueryAsync(new GetStudentReportQuery(userId), cancellationToken);
+                if (currentUser.Role is not { } role)
+                {
+                    return Results.Unauthorized();
+                }
+
+                var report = await dispatcher.QueryAsync(
+                    new GetStudentReportQuery(userId, userId, role.ToString()), cancellationToken);
+
                 return Results.Ok(report);
             })
             .WithName("GetMyGrades")
@@ -53,11 +61,18 @@ internal static class GradebookEndpoints
 
         group.MapGet("/students/{studentUserId:guid}", async (
                 Guid studentUserId,
+                ICurrentUser currentUser,
                 IDispatcher dispatcher,
                 CancellationToken cancellationToken) =>
-                Results.Ok(await dispatcher.QueryAsync(
-                    new GetStudentReportQuery(studentUserId), cancellationToken)))
-            .RequireAuthorization(AuthorizationPolicies.TeacherOrAdmin)
+            {
+                if (currentUser.UserId is not { } userId || currentUser.Role is not { } role)
+                {
+                    return Results.Unauthorized();
+                }
+
+                return Results.Ok(await dispatcher.QueryAsync(
+                    new GetStudentReportQuery(studentUserId, userId, role.ToString()), cancellationToken));
+            })
             .WithName("GetStudentReport")
             .Produces<StudentReportDto>();
 

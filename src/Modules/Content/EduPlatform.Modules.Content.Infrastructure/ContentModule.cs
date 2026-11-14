@@ -3,7 +3,6 @@ using EduPlatform.BuildingBlocks.Infrastructure.Persistence;
 using EduPlatform.Modules.Content.Application.Abstractions;
 using EduPlatform.Modules.Content.Application.UseCases;
 using EduPlatform.Modules.Content.Infrastructure.Persistence;
-using EduPlatform.Modules.Content.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,12 +26,9 @@ public static class ContentModule
             .UseSnakeCaseNamingConvention()
             .AddInterceptors(provider.GetRequiredService<PublishDomainEventsInterceptor>()));
 
-        services.AddOptions<StorageOptions>().Bind(configuration.GetSection(StorageOptions.SectionName));
-
         services.AddHandlersFromAssembly(typeof(ListMaterialsQuery).Assembly);
         services.AddScoped<IContentRepository, ContentRepository>();
         services.AddScoped<IContentReadStore, ContentReadStore>();
-        services.AddSingleton<IFileStorage, MinioFileStorage>();
 
         return services;
     }

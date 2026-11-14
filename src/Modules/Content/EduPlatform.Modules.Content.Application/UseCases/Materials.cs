@@ -1,5 +1,6 @@
 using EduPlatform.BuildingBlocks.Application.Messaging;
 using EduPlatform.BuildingBlocks.Domain;
+using EduPlatform.BuildingBlocks.Application.Abstractions;
 using EduPlatform.Modules.Content.Application.Abstractions;
 using EduPlatform.Modules.Content.Contracts;
 using EduPlatform.Modules.Content.Domain;
@@ -72,7 +73,13 @@ internal sealed class UploadMaterialHandler(
             .ConfigureAwait(false);
 
         var storageKey = await storage
-            .SaveAsync(command.Content, command.FileName, command.ContentType, command.SizeBytes, cancellationToken)
+            .SaveAsync(
+                StorageBuckets.Materials,
+                command.Content,
+                command.FileName,
+                command.ContentType,
+                command.SizeBytes,
+                cancellationToken)
             .ConfigureAwait(false);
 
         var material = Material.CreateFile(
@@ -208,13 +215,15 @@ internal sealed class DeleteMaterialHandler(
             .EnsureTeachesAsync(school, command.TeacherUserId, material.TeachingAssignmentId, cancellationToken)
             .ConfigureAwait(false);
 
-        if (material.StorageKey is { } key)
-        {
-            await storage.DeleteAsync(key, cancellationToken).ConfigureAwait(false);
-        }
+        var key = material.StorageKey;
 
         repository.RemoveMaterial(material);
         await repository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        if (key is not null)
+        {
+            await storage.DeleteAsync(StorageBuckets.Materials, key, cancellationToken).ConfigureAwait(false);
+        }
     }
 }
 
@@ -251,7 +260,7 @@ internal sealed class DownloadMaterialHandler(
             throw new DomainException("This material is a link, not a file.");
         }
 
-        var content = await storage.OpenAsync(key, cancellationToken).ConfigureAwait(false);
+        var content = await storage.OpenAsync(StorageBuckets.Materials, key, cancellationToken).ConfigureAwait(false);
 
         return new MaterialDownloadDto(
             content,

@@ -35,7 +35,7 @@ export interface ClassGradebook {
 export interface SubjectPerformance {
   readonly teachingAssignmentId: string;
   readonly subjectName: string;
-  readonly grades: readonly number[];
+  readonly grades: readonly Grade[];
   readonly average: number | null;
   readonly unexcusedAbsences: number;
   readonly excusedAbsences: number;
@@ -57,6 +57,10 @@ export const GRADE_REASONS = [
   { value: 'Project', label: 'Проект' },
   { value: 'Activity', label: 'Активност' },
 ];
+
+export const GRADE_REASON_LABELS: Readonly<Record<string, string>> = Object.fromEntries(
+  GRADE_REASONS.map((reason) => [reason.value, reason.label]),
+);
 
 export const ABSENCE_KINDS = [
   { value: 'Unexcused', label: 'Неизвинено' },

@@ -1,7 +1,9 @@
 using EduPlatform.BuildingBlocks.Application;
 using EduPlatform.BuildingBlocks.Infrastructure.Persistence;
+using EduPlatform.Modules.Gradebook.Application;
 using EduPlatform.Modules.Gradebook.Application.Abstractions;
 using EduPlatform.Modules.Gradebook.Application.UseCases;
+using EduPlatform.Modules.Gradebook.Contracts;
 using EduPlatform.Modules.Gradebook.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -29,6 +31,7 @@ public static class GradebookModule
         services.AddHandlersFromAssembly(typeof(GiveGradeCommand).Assembly);
         services.AddScoped<IGradebookRepository, GradebookRepository>();
         services.AddScoped<IGradebookReadStore, GradebookReadStore>();
+        services.AddScoped<IGradebookWriter, GradebookWriter>();
 
         return services;
     }

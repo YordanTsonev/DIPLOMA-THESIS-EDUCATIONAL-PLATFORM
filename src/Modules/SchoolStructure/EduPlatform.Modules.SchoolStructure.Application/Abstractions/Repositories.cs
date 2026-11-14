@@ -47,6 +47,15 @@ public interface ISchoolStructureRepository
 
     void AddAssignment(TeachingAssignment assignment);
 
+    Task<ParentChild?> FindParentLinkAsync(
+        Guid parentUserId,
+        Guid studentUserId,
+        CancellationToken cancellationToken = default);
+
+    void AddParentLink(ParentChild link);
+
+    void RemoveParentLink(ParentChild link);
+
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }
 

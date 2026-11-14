@@ -23,5 +23,7 @@ public sealed class SchoolStructureDbContext(DbContextOptions<SchoolStructureDbC
 
     public DbSet<CalendarEvent> CalendarEvents => Set<CalendarEvent>();
 
+    public DbSet<ParentChild> ParentChildren => Set<ParentChild>();
+
     protected override string Schema => SchemaName;
 }

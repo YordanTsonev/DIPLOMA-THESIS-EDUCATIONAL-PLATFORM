@@ -1,4 +1,5 @@
 using EduPlatform.Api.Authorization;
+using EduPlatform.BuildingBlocks.Domain;
 using EduPlatform.BuildingBlocks.Application.Messaging;
 using EduPlatform.Modules.Content.Application.UseCases;
 using EduPlatform.Modules.Content.Contracts;
@@ -171,8 +172,8 @@ internal static class MaterialEndpoints
             .Produces(StatusCodes.Status204NoContent);
 
         group.MapGet("/limits", () => Results.Ok(new MaterialLimitsResponse(
-                Material.MaxFileSizeBytes,
-                Material.AllowedExtensions)))
+                FileAttachmentRules.MaxFileSizeBytes,
+                FileAttachmentRules.AllowedExtensions)))
             .WithName("GetMaterialLimits")
             .Produces<MaterialLimitsResponse>();
 

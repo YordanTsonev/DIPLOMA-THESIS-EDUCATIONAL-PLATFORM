@@ -1,5 +1,6 @@
 using EduPlatform.Api.Authorization;
 using EduPlatform.Modules.Identity.Application.Abstractions;
+using EduPlatform.Modules.Identity.Domain;
 using EduPlatform.BuildingBlocks.Application.Messaging;
 using EduPlatform.Modules.SchoolStructure.Application.UseCases;
 using EduPlatform.Modules.SchoolStructure.Contracts;
@@ -17,6 +18,7 @@ internal static class SchoolEndpoints
         MapAssignments(endpoints);
         MapSchedule(endpoints);
         MapCalendar(endpoints);
+        MapGuardians(endpoints);
         return endpoints;
     }
 
@@ -163,10 +165,20 @@ internal static class SchoolEndpoints
         group.MapGet("/", async (
                 Guid? schoolClassId,
                 Guid? teacherUserId,
+                ICurrentUser currentUser,
                 IDispatcher dispatcher,
                 CancellationToken cancellationToken) =>
-                Results.Ok(await dispatcher.QueryAsync(
-                    new ListAssignmentsQuery(schoolClassId, teacherUserId), cancellationToken)))
+            {
+                if (currentUser.UserId is not { } userId || currentUser.Role is not { } role)
+                {
+                    return Results.Unauthorized();
+                }
+
+                var owner = role is UserRole.Teacher ? userId : teacherUserId;
+
+                return Results.Ok(await dispatcher.QueryAsync(
+                    new ListAssignmentsQuery(schoolClassId, owner), cancellationToken));
+            })
             .WithName("ListTeachingAssignments")
             .Produces<IReadOnlyList<TeachingAssignmentDto>>();
 
@@ -323,7 +335,64 @@ internal static class SchoolEndpoints
             .WithName("DeleteCalendarEvent")
             .Produces(StatusCodes.Status204NoContent);
     }
+
+    private static void MapGuardians(IEndpointRouteBuilder endpoints)
+    {
+        var group = endpoints.MapGroup("/api/v1/guardians")
+            .WithTags("School structure")
+            .RequireAuthorization();
+
+        group.MapGet("/me/children", async (
+                ICurrentUser currentUser,
+                IDispatcher dispatcher,
+                CancellationToken cancellationToken) =>
+            {
+                if (currentUser.UserId is not { } userId)
+                {
+                    return Results.Unauthorized();
+                }
+
+                return Results.Ok(await dispatcher.QueryAsync(
+                    new ListChildrenQuery(userId), cancellationToken));
+            })
+            .WithName("ListMyChildren")
+            .Produces<IReadOnlyList<ChildDto>>();
+
+        group.MapGet("/{parentUserId:guid}/children", async (
+                Guid parentUserId,
+                IDispatcher dispatcher,
+                CancellationToken cancellationToken) =>
+                Results.Ok(await dispatcher.QueryAsync(
+                    new ListChildrenQuery(parentUserId), cancellationToken)))
+            .RequireAuthorization(AuthorizationPolicies.AdminOnly)
+            .WithName("ListChildrenOfParent")
+            .Produces<IReadOnlyList<ChildDto>>();
+
+        group.MapPost("/{parentUserId:guid}/children", async (
+                Guid parentUserId,
+                LinkChildRequest request,
+                IDispatcher dispatcher,
+                CancellationToken cancellationToken) =>
+                Results.Ok(await dispatcher.SendAsync(
+                    new LinkChildCommand(parentUserId, request.StudentUserId), cancellationToken)))
+            .RequireAuthorization(AuthorizationPolicies.AdminOnly)
+            .WithName("LinkChildToParent")
+            .Produces<IReadOnlyList<ChildDto>>();
+
+        group.MapDelete("/{parentUserId:guid}/children/{studentUserId:guid}", async (
+                Guid parentUserId,
+                Guid studentUserId,
+                IDispatcher dispatcher,
+                CancellationToken cancellationToken) =>
+                Results.Ok(await dispatcher.SendAsync(
+                    new UnlinkChildCommand(parentUserId, studentUserId), cancellationToken)))
+            .RequireAuthorization(AuthorizationPolicies.AdminOnly)
+            .WithName("UnlinkChildFromParent")
+            .Produces<IReadOnlyList<ChildDto>>();
+    }
 }
+
+internal sealed record LinkChildRequest(Guid StudentUserId);
 
 internal sealed record CreateCalendarEventRequest(
     CalendarEventType Type,

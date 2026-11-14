@@ -81,6 +81,12 @@ export const routes: Routes = [
             title: 'Материали — EduPlatform',
           },
           {
+            path: 'homework',
+            loadComponent: () =>
+              import('./features/homework/my-homework').then((m) => m.MyHomeworkComponent),
+            title: 'Домашни — EduPlatform',
+          },
+          {
             path: 'grades',
             loadComponent: () =>
               import('./features/gradebook/my-grades').then((m) => m.MyGradesComponent),
@@ -124,6 +130,14 @@ export const routes: Routes = [
             title: 'Материали — EduPlatform',
           },
           {
+            path: 'homework',
+            loadComponent: () =>
+              import('./features/homework/teacher-homework').then(
+                (m) => m.TeacherHomeworkComponent,
+              ),
+            title: 'Домашни — EduPlatform',
+          },
+          {
             path: 'gradebook',
             loadComponent: () =>
               import('./features/gradebook/class-gradebook').then((m) => m.ClassGradebookComponent),
@@ -141,6 +155,12 @@ export const routes: Routes = [
               import('./features/dashboard/dashboard').then((m) => m.DashboardComponent),
             data: { audience: 'parent' },
             title: 'Начало — EduPlatform',
+          },
+          {
+            path: 'children',
+            loadComponent: () =>
+              import('./features/parent/my-children').then((m) => m.MyChildrenComponent),
+            title: 'Моите деца — EduPlatform',
           },
           {
             path: 'calendar',
@@ -169,7 +189,8 @@ export const routes: Routes = [
           },
           {
             path: 'users',
-            loadComponent: () => import('./features/admin/users').then((m) => m.AdminUsersComponent),
+            loadComponent: () =>
+              import('./features/admin/users').then((m) => m.AdminUsersComponent),
             title: 'Потребители — EduPlatform',
           },
           {
@@ -209,7 +230,8 @@ export const routes: Routes = [
       {
         path: '',
         pathMatch: 'full',
-        loadComponent: () => import('./features/home-redirect').then((m) => m.HomeRedirectComponent),
+        loadComponent: () =>
+          import('./features/home-redirect').then((m) => m.HomeRedirectComponent),
       },
     ],
   },

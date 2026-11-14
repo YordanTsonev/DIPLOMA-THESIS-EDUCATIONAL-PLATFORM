@@ -15,6 +15,12 @@
     <Project Path="src/Modules/Content/EduPlatform.Modules.Content.Domain/EduPlatform.Modules.Content.Domain.csproj" />
     <Project Path="src/Modules/Content/EduPlatform.Modules.Content.Infrastructure/EduPlatform.Modules.Content.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Homework/">
+    <Project Path="src/Modules/Homework/EduPlatform.Modules.Homework.Application/EduPlatform.Modules.Homework.Application.csproj" />
+    <Project Path="src/Modules/Homework/EduPlatform.Modules.Homework.Contracts/EduPlatform.Modules.Homework.Contracts.csproj" />
+    <Project Path="src/Modules/Homework/EduPlatform.Modules.Homework.Domain/EduPlatform.Modules.Homework.Domain.csproj" />
+    <Project Path="src/Modules/Homework/EduPlatform.Modules.Homework.Infrastructure/EduPlatform.Modules.Homework.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Gradebook/">
     <Project Path="src/Modules/Gradebook/EduPlatform.Modules.Gradebook.Application/EduPlatform.Modules.Gradebook.Application.csproj" />
     <Project Path="src/Modules/Gradebook/EduPlatform.Modules.Gradebook.Contracts/EduPlatform.Modules.Gradebook.Contracts.csproj" />
@@ -37,6 +43,7 @@
     <Project Path="tests/EduPlatform.Api.IntegrationTests/EduPlatform.Api.IntegrationTests.csproj" />
     <Project Path="tests/EduPlatform.ArchitectureTests/EduPlatform.ArchitectureTests.csproj" />
     <Project Path="tests/EduPlatform.Modules.Gradebook.UnitTests/EduPlatform.Modules.Gradebook.UnitTests.csproj" />
+    <Project Path="tests/EduPlatform.Modules.Homework.UnitTests/EduPlatform.Modules.Homework.UnitTests.csproj" />
     <Project Path="tests/EduPlatform.Modules.Identity.UnitTests/EduPlatform.Modules.Identity.UnitTests.csproj" />
     <Project Path="tests/EduPlatform.Modules.SchoolStructure.UnitTests/EduPlatform.Modules.SchoolStructure.UnitTests.csproj" />
   </Folder>

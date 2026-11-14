@@ -26,7 +26,7 @@ public sealed record AbsenceDto(
 public sealed record SubjectPerformanceDto(
     Guid TeachingAssignmentId,
     string SubjectName,
-    IReadOnlyList<decimal> Grades,
+    IReadOnlyList<GradeDto> Grades,
     decimal? Average,
     int UnexcusedAbsences,
     int ExcusedAbsences,
@@ -37,3 +37,16 @@ public sealed record StudentReportDto(
     string StudentName,
     IReadOnlyList<SubjectPerformanceDto> Subjects,
     decimal? OverallAverage);
+
+public interface IGradebookWriter
+{
+    Task<GradeDto> GiveHomeworkGradeAsync(
+        Guid studentUserId,
+        Guid teachingAssignmentId,
+        decimal value,
+        Guid teacherUserId,
+        string? comment,
+        CancellationToken cancellationToken = default);
+
+    Task RemoveHomeworkGradeAsync(Guid gradeId, CancellationToken cancellationToken = default);
+}

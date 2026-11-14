@@ -26,6 +26,12 @@ internal sealed partial class GlobalExceptionHandler(
         var problemDetails = exception switch
         {
             ValidationException validation => CreateValidationProblem(validation),
+            ForbiddenException forbidden => new ProblemDetails
+            {
+                Status = StatusCodes.Status403Forbidden,
+                Title = "The request is not allowed for this user.",
+                Detail = forbidden.Message,
+            },
             DomainException domain => new ProblemDetails
             {
                 Status = StatusCodes.Status409Conflict,

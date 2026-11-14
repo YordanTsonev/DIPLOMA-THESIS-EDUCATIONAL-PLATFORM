@@ -1,11 +1,11 @@
-using EduPlatform.Modules.Content.Application.Abstractions;
+using EduPlatform.BuildingBlocks.Application.Abstractions;
 using Microsoft.Extensions.Options;
 using Minio;
 using Minio.DataModel.Args;
 
-namespace EduPlatform.Modules.Content.Infrastructure.Storage;
+namespace EduPlatform.BuildingBlocks.Infrastructure.Storage;
 
-public sealed class StorageOptions
+public sealed class FileStorageOptions
 {
     public const string SectionName = "Storage";
 
@@ -16,27 +16,27 @@ public sealed class StorageOptions
     public string SecretKey { get; set; } = string.Empty;
 
     public bool UseSsl { get; set; }
-
-    public string MaterialsBucket { get; set; } = "materials";
 }
 
 internal sealed class MinioFileStorage : IFileStorage
 {
     private readonly IMinioClient _client;
-    private readonly StorageOptions _options;
 
-    public MinioFileStorage(IOptions<StorageOptions> options)
+    public MinioFileStorage(IOptions<FileStorageOptions> options)
     {
-        _options = options.Value;
+        ArgumentNullException.ThrowIfNull(options);
+
+        var settings = options.Value;
 
         _client = new MinioClient()
-            .WithEndpoint(_options.Endpoint)
-            .WithCredentials(_options.AccessKey, _options.SecretKey)
-            .WithSSL(_options.UseSsl)
+            .WithEndpoint(settings.Endpoint)
+            .WithCredentials(settings.AccessKey, settings.SecretKey)
+            .WithSSL(settings.UseSsl)
             .Build();
     }
 
     public async Task<string> SaveAsync(
+        string bucket,
         Stream content,
         string fileName,
         string contentType,
@@ -47,7 +47,7 @@ internal sealed class MinioFileStorage : IFileStorage
 
         await _client.PutObjectAsync(
             new PutObjectArgs()
-                .WithBucket(_options.MaterialsBucket)
+                .WithBucket(bucket)
                 .WithObject(key)
                 .WithStreamData(content)
                 .WithObjectSize(sizeBytes)
@@ -57,13 +57,16 @@ internal sealed class MinioFileStorage : IFileStorage
         return key;
     }
 
-    public async Task<Stream> OpenAsync(string storageKey, CancellationToken cancellationToken = default)
+    public async Task<Stream> OpenAsync(
+        string bucket,
+        string storageKey,
+        CancellationToken cancellationToken = default)
     {
         var buffer = new MemoryStream();
 
         await _client.GetObjectAsync(
             new GetObjectArgs()
-                .WithBucket(_options.MaterialsBucket)
+                .WithBucket(bucket)
                 .WithObject(storageKey)
                 .WithCallbackStream(stream => stream.CopyTo(buffer)),
             cancellationToken).ConfigureAwait(false);
@@ -72,10 +75,13 @@ internal sealed class MinioFileStorage : IFileStorage
         return buffer;
     }
 
-    public async Task DeleteAsync(string storageKey, CancellationToken cancellationToken = default) =>
+    public async Task DeleteAsync(
+        string bucket,
+        string storageKey,
+        CancellationToken cancellationToken = default) =>
         await _client.RemoveObjectAsync(
             new RemoveObjectArgs()
-                .WithBucket(_options.MaterialsBucket)
+                .WithBucket(bucket)
                 .WithObject(storageKey),
             cancellationToken).ConfigureAwait(false);
 }

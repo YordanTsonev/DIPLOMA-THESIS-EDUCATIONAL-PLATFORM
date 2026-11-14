@@ -156,6 +156,37 @@ namespace EduPlatform.Modules.SchoolStructure.Infrastructure.Persistence.Migrati
                     b.ToTable("class_enrollments", "school");
                 });
 
+            modelBuilder.Entity("EduPlatform.Modules.SchoolStructure.Domain.ParentChild", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("LinkedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("linked_at");
+
+                    b.Property<Guid>("ParentUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("parent_user_id");
+
+                    b.Property<Guid>("StudentUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("student_user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_parent_children");
+
+                    b.HasIndex("StudentUserId")
+                        .HasDatabaseName("ix_parent_children_student_user_id");
+
+                    b.HasIndex("ParentUserId", "StudentUserId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_parent_children_parent_user_id_student_user_id");
+
+                    b.ToTable("parent_children", "school");
+                });
+
             modelBuilder.Entity("EduPlatform.Modules.SchoolStructure.Domain.ScheduleSlot", b =>
                 {
                     b.Property<Guid>("Id")

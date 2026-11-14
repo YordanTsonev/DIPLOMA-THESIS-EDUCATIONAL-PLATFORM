@@ -4,6 +4,7 @@ import { DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { PagedResult, User, UserRole } from '../../core/auth/auth.models';
+import { Child, GuardiansService } from '../../core/school/guardians.service';
 import { describeError } from '../../core/auth/problem-details';
 
 /**
@@ -22,6 +23,7 @@ import { describeError } from '../../core/auth/problem-details';
 export class AdminUsersComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly formBuilder = inject(FormBuilder);
+  private readonly guardians = inject(GuardiansService);
 
   protected readonly roles = Object.values(UserRole);
 
@@ -30,6 +32,11 @@ export class AdminUsersComponent implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly notice = signal<string | null>(null);
   protected readonly creating = signal(false);
+
+  protected readonly linkingParent = signal<User | null>(null);
+  protected readonly children = signal<readonly Child[]>([]);
+  protected readonly students = signal<readonly User[]>([]);
+  protected readonly childToAdd = signal('');
 
   protected readonly filters = this.formBuilder.nonNullable.group({
     search: [''],
@@ -125,6 +132,75 @@ export class AdminUsersComponent implements OnInit {
         ),
       user.isActive ? `${user.fullName} е деактивиран.` : `${user.fullName} е активиран отново.`,
     );
+  }
+
+  protected async openChildren(user: User): Promise<void> {
+    if (this.linkingParent()?.id === user.id) {
+      this.linkingParent.set(null);
+      return;
+    }
+
+    this.error.set(null);
+    this.notice.set(null);
+    this.linkingParent.set(user);
+    this.childToAdd.set('');
+
+    try {
+      const [children, students] = await Promise.all([
+        this.guardians.childrenOf(user.id),
+        this.guardians.students(),
+      ]);
+
+      this.children.set(children);
+      this.students.set(students);
+    } catch (error) {
+      this.error.set(describeError(error));
+    }
+  }
+
+  protected chooseChild(event: Event): void {
+    this.childToAdd.set((event.target as HTMLSelectElement).value);
+  }
+
+  protected async linkChild(): Promise<void> {
+    const parent = this.linkingParent();
+    const studentId = this.childToAdd();
+
+    if (!parent || studentId === '') {
+      return;
+    }
+
+    this.error.set(null);
+
+    try {
+      this.children.set(await this.guardians.link(parent.id, studentId));
+      this.childToAdd.set('');
+      this.notice.set('Детето е свързано с родителя.');
+    } catch (error) {
+      this.error.set(describeError(error));
+    }
+  }
+
+  protected async unlinkChild(child: Child): Promise<void> {
+    const parent = this.linkingParent();
+
+    if (!parent) {
+      return;
+    }
+
+    this.error.set(null);
+
+    try {
+      this.children.set(await this.guardians.unlink(parent.id, child.studentUserId));
+      this.notice.set('Връзката е премахната.');
+    } catch (error) {
+      this.error.set(describeError(error));
+    }
+  }
+
+  protected unlinkedStudents(): readonly User[] {
+    const linked = new Set(this.children().map((child) => child.studentUserId));
+    return this.students().filter((student) => !linked.has(student.id));
   }
 
   private async mutate(action: () => Promise<User>, message: string): Promise<void> {
