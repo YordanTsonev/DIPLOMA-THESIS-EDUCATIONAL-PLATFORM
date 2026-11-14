@@ -7,6 +7,7 @@ using EduPlatform.Modules.Homework.Contracts;
 using EduPlatform.Modules.Homework.Domain;
 using EduPlatform.Modules.SchoolStructure.Contracts;
 using FluentValidation;
+using Microsoft.Extensions.Logging;
 
 namespace EduPlatform.Modules.Homework.Application.UseCases;
 
@@ -158,7 +159,8 @@ internal sealed class CreateAssignmentHandler(
     IHomeworkRepository repository,
     IHomeworkReadStore store,
     ISchoolDirectory school,
-    IFileStorage storage) : ICommandHandler<CreateAssignmentCommand, AssignmentDto>
+    IFileStorage storage,
+    ILogger<CreateAssignmentHandler> logger) : ICommandHandler<CreateAssignmentCommand, AssignmentDto>
 {
     public async Task<AssignmentDto> HandleAsync(
         CreateAssignmentCommand command,
@@ -179,9 +181,11 @@ internal sealed class CreateAssignmentHandler(
             command.TeacherUserId,
             DateOnly.FromDateTime(DateTime.UtcNow));
 
+        string? uploaded = null;
+
         if (command.Content is not null)
         {
-            var key = await storage
+            uploaded = await storage
                 .SaveAsync(
                     StorageBuckets.Submissions,
                     command.Content,
@@ -191,11 +195,20 @@ internal sealed class CreateAssignmentHandler(
                     cancellationToken)
                 .ConfigureAwait(false);
 
-            assignment.Attach(key, command.FileName, command.ContentType, command.SizeBytes);
+            assignment.Attach(uploaded, command.FileName, command.ContentType, command.SizeBytes);
         }
 
         repository.AddAssignment(assignment);
-        await repository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        try
+        {
+            await repository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch
+        {
+            await OrphanFiles.DiscardAsync(storage, logger, uploaded, cancellationToken).ConfigureAwait(false);
+            throw;
+        }
 
         var created = await store
             .ListAssignmentsAsync([command.TeachingAssignmentId], cancellationToken)
@@ -253,7 +266,8 @@ internal sealed class SubmitHomeworkHandler(
     IHomeworkRepository repository,
     IHomeworkReadStore store,
     ISchoolDirectory school,
-    IFileStorage storage) : ICommandHandler<SubmitHomeworkCommand, SubmissionDto>
+    IFileStorage storage,
+    ILogger<SubmitHomeworkHandler> logger) : ICommandHandler<SubmitHomeworkCommand, SubmissionDto>
 {
     public async Task<SubmissionDto> HandleAsync(
         SubmitHomeworkCommand command,
@@ -297,11 +311,14 @@ internal sealed class SubmitHomeworkHandler(
             submission = existing;
         }
 
+        string? replaced = null;
+        string? uploaded = null;
+
         if (command.Content is not null)
         {
-            var replaced = submission.DetachFile();
+            replaced = submission.DetachFile();
 
-            var key = await storage
+            uploaded = await storage
                 .SaveAsync(
                     StorageBuckets.Submissions,
                     command.Content,
@@ -311,16 +328,20 @@ internal sealed class SubmitHomeworkHandler(
                     cancellationToken)
                 .ConfigureAwait(false);
 
-            submission.Attach(key, command.FileName, command.ContentType, command.SizeBytes);
-
-            if (replaced is not null)
-            {
-                await storage.DeleteAsync(StorageBuckets.Submissions, replaced, cancellationToken)
-                    .ConfigureAwait(false);
-            }
+            submission.Attach(uploaded, command.FileName, command.ContentType, command.SizeBytes);
         }
 
-        await repository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await repository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch
+        {
+            await OrphanFiles.DiscardAsync(storage, logger, uploaded, cancellationToken).ConfigureAwait(false);
+            throw;
+        }
+
+        await OrphanFiles.DiscardAsync(storage, logger, replaced, cancellationToken).ConfigureAwait(false);
 
         return await store.FindSubmissionAsync(submission.Id, cancellationToken).ConfigureAwait(false)
             ?? throw new DomainException("The submission could not be read back.");
@@ -371,13 +392,11 @@ internal sealed class ReviewSubmissionHandler(
 
         submission.Review(command.Mark, command.Feedback, command.TeacherUserId, assignment.IsGraded);
 
+        Guid? superseded = null;
+
         if (submission.Mark is { } mark)
         {
-            if (submission.GradeId is { } previous)
-            {
-                await gradebook.RemoveHomeworkGradeAsync(previous, cancellationToken).ConfigureAwait(false);
-                submission.DetachGrade();
-            }
+            superseded = submission.GradeId;
 
             var grade = await gradebook.GiveHomeworkGradeAsync(
                     submission.StudentUserId,
@@ -392,6 +411,11 @@ internal sealed class ReviewSubmissionHandler(
         }
 
         await repository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        if (superseded is { } old)
+        {
+            await gradebook.RemoveHomeworkGradeAsync(old, cancellationToken).ConfigureAwait(false);
+        }
 
         return await store.FindSubmissionAsync(submission.Id, cancellationToken).ConfigureAwait(false)
             ?? throw new DomainException("The submission could not be read back.");

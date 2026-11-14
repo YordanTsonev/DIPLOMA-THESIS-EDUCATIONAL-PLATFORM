@@ -215,13 +215,15 @@ internal sealed class DeleteMaterialHandler(
             .EnsureTeachesAsync(school, command.TeacherUserId, material.TeachingAssignmentId, cancellationToken)
             .ConfigureAwait(false);
 
-        if (material.StorageKey is { } key)
-        {
-            await storage.DeleteAsync(StorageBuckets.Materials, key, cancellationToken).ConfigureAwait(false);
-        }
+        var key = material.StorageKey;
 
         repository.RemoveMaterial(material);
         await repository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        if (key is not null)
+        {
+            await storage.DeleteAsync(StorageBuckets.Materials, key, cancellationToken).ConfigureAwait(false);
+        }
     }
 }
 
