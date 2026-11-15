@@ -9,6 +9,12 @@
     <Project Path="src/BuildingBlocks/EduPlatform.BuildingBlocks.Infrastructure/EduPlatform.BuildingBlocks.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Assessment/">
+    <Project Path="src/Modules/Assessment/EduPlatform.Modules.Assessment.Application/EduPlatform.Modules.Assessment.Application.csproj" />
+    <Project Path="src/Modules/Assessment/EduPlatform.Modules.Assessment.Contracts/EduPlatform.Modules.Assessment.Contracts.csproj" />
+    <Project Path="src/Modules/Assessment/EduPlatform.Modules.Assessment.Domain/EduPlatform.Modules.Assessment.Domain.csproj" />
+    <Project Path="src/Modules/Assessment/EduPlatform.Modules.Assessment.Infrastructure/EduPlatform.Modules.Assessment.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Content/">
     <Project Path="src/Modules/Content/EduPlatform.Modules.Content.Application/EduPlatform.Modules.Content.Application.csproj" />
     <Project Path="src/Modules/Content/EduPlatform.Modules.Content.Contracts/EduPlatform.Modules.Content.Contracts.csproj" />

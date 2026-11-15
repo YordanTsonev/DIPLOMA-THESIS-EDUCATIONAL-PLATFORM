@@ -85,6 +85,8 @@ public interface ISchoolDirectory
 
     Task<TeachingAssignmentDto?> FindAssignmentAsync(Guid id, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<SubjectDto>> ListSubjectsAsync(CancellationToken cancellationToken = default);
+
     Task<Guid?> FindClassOfStudentAsync(Guid studentUserId, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<ClassStudentDto>> ListClassStudentsAsync(

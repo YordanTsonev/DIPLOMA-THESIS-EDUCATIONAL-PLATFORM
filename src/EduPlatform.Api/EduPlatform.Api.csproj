@@ -7,6 +7,7 @@
     <ProjectReference Include="..\Modules\Content\EduPlatform.Modules.Content.Infrastructure\EduPlatform.Modules.Content.Infrastructure.csproj" />
     <ProjectReference Include="..\Modules\Gradebook\EduPlatform.Modules.Gradebook.Infrastructure\EduPlatform.Modules.Gradebook.Infrastructure.csproj" />
     <ProjectReference Include="..\Modules\Homework\EduPlatform.Modules.Homework.Infrastructure\EduPlatform.Modules.Homework.Infrastructure.csproj" />
+    <ProjectReference Include="..\Modules\Assessment\EduPlatform.Modules.Assessment.Infrastructure\EduPlatform.Modules.Assessment.Infrastructure.csproj" />
     <ProjectReference Include="..\Modules\Content\EduPlatform.Modules.Content.Application\EduPlatform.Modules.Content.Application.csproj" />
     <ProjectReference Include="..\Modules\Gradebook\EduPlatform.Modules.Gradebook.Application\EduPlatform.Modules.Gradebook.Application.csproj" />
   </ItemGroup>

@@ -414,7 +414,7 @@ internal sealed class ReviewSubmissionHandler(
 
         if (superseded is { } old)
         {
-            await gradebook.RemoveHomeworkGradeAsync(old, cancellationToken).ConfigureAwait(false);
+            await gradebook.RemoveGradeAsync(old, cancellationToken).ConfigureAwait(false);
         }
 
         return await store.FindSubmissionAsync(submission.Id, cancellationToken).ConfigureAwait(false)

@@ -27,7 +27,25 @@ public sealed class GradebookWriter(IDispatcher dispatcher, IGradebookRepository
                 teacherUserId),
             cancellationToken);
 
-    public async Task RemoveHomeworkGradeAsync(Guid gradeId, CancellationToken cancellationToken = default)
+    public Task<GradeDto> GiveTestGradeAsync(
+        Guid studentUserId,
+        Guid teachingAssignmentId,
+        decimal value,
+        Guid teacherUserId,
+        string? comment,
+        CancellationToken cancellationToken = default) =>
+        dispatcher.SendAsync(
+            new GiveGradeCommand(
+                studentUserId,
+                teachingAssignmentId,
+                value,
+                GradeKind.Current,
+                GradeReason.Test,
+                comment,
+                teacherUserId),
+            cancellationToken);
+
+    public async Task RemoveGradeAsync(Guid gradeId, CancellationToken cancellationToken = default)
     {
         var grade = await repository.FindGradeAsync(gradeId, cancellationToken).ConfigureAwait(false);
 
