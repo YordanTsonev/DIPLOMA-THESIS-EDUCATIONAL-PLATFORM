@@ -1,6 +1,7 @@
 using EduPlatform.BuildingBlocks.Application;
 using EduPlatform.BuildingBlocks.Infrastructure.Persistence;
 using EduPlatform.Modules.Assessment.Application.Abstractions;
+using EduPlatform.Modules.Assessment.Contracts;
 using EduPlatform.Modules.Assessment.Application.UseCases;
 using EduPlatform.Modules.Assessment.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -29,6 +30,7 @@ public static class AssessmentModule
         services.AddHandlersFromAssembly(typeof(CreateExamCommand).Assembly);
         services.AddScoped<IAssessmentRepository, AssessmentRepository>();
         services.AddScoped<IAssessmentReadStore, AssessmentReadStore>();
+        services.AddScoped<IExamDirectory>(provider => (AssessmentReadStore)provider.GetRequiredService<IAssessmentReadStore>());
 
         return services;
     }

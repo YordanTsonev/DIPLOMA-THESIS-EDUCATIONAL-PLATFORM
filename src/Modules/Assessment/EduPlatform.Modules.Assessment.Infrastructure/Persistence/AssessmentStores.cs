@@ -60,7 +60,7 @@ internal sealed class AssessmentRepository(AssessmentDbContext dbContext) : IAss
 internal sealed class AssessmentReadStore(
     AssessmentDbContext dbContext,
     IUserDirectory users,
-    ISchoolDirectory school) : IAssessmentReadStore
+    ISchoolDirectory school) : IAssessmentReadStore, IExamDirectory
 {
     public async Task<IReadOnlyList<QuestionDto>> ListQuestionsAsync(
         IReadOnlyCollection<Guid> subjectIds,
@@ -364,4 +364,60 @@ internal sealed class AssessmentReadStore(
             attempt.GradeId,
             answers);
     }
+
+    public async Task<ExamSummaryDto?> FindExamSummaryAsync(Guid examId, CancellationToken cancellationToken = default)
+    {
+        var exam = await dbContext.Exams
+            .AsNoTracking()
+            .SingleOrDefaultAsync(entry => entry.Id == examId, cancellationToken)
+            .ConfigureAwait(false);
+
+        return exam is null ? null : Summarise(exam);
+    }
+
+    public async Task<IReadOnlyList<ExamSummaryDto>> ListPublishedAsync(
+        Guid teachingAssignmentId,
+        CancellationToken cancellationToken = default)
+    {
+        var rows = await dbContext.Exams
+            .AsNoTracking()
+            .Where(exam => exam.IsPublished && exam.TeachingAssignmentId == teachingAssignmentId)
+            .OrderByDescending(exam => exam.CreatedAt)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return [.. rows.Select(Summarise)];
+    }
+
+    public async Task<AttemptSummaryDto?> FindAttemptAsync(
+        Guid examId,
+        Guid studentUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var attempt = await dbContext.Attempts
+            .AsNoTracking()
+            .SingleOrDefaultAsync(
+                entry => entry.ExamId == examId && entry.StudentUserId == studentUserId,
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        return attempt is null
+            ? null
+            : new AttemptSummaryDto(
+                attempt.Id,
+                attempt.IsSubmitted,
+                attempt.IsReleased ? attempt.Score : null,
+                attempt.MaxScore,
+                attempt.IsReleased ? attempt.Mark : null,
+                attempt.IsReleased);
+    }
+
+    private static ExamSummaryDto Summarise(Exam exam) =>
+        new(exam.Id,
+            exam.TeachingAssignmentId,
+            exam.Title,
+            exam.IsPublished,
+            exam.DurationMinutes,
+            exam.Items.Count,
+            exam.MaxScore);
 }

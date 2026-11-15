@@ -98,3 +98,34 @@ public sealed record StudentExamDto(
     int? Score,
     decimal? Mark,
     bool IsReleased);
+
+public sealed record ExamSummaryDto(
+    Guid Id,
+    Guid TeachingAssignmentId,
+    string Title,
+    bool IsPublished,
+    int DurationMinutes,
+    int QuestionCount,
+    int MaxScore);
+
+public sealed record AttemptSummaryDto(
+    Guid AttemptId,
+    bool IsSubmitted,
+    int? Score,
+    int MaxScore,
+    decimal? Mark,
+    bool IsReleased);
+
+public interface IExamDirectory
+{
+    Task<ExamSummaryDto?> FindExamSummaryAsync(Guid examId, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<ExamSummaryDto>> ListPublishedAsync(
+        Guid teachingAssignmentId,
+        CancellationToken cancellationToken = default);
+
+    Task<AttemptSummaryDto?> FindAttemptAsync(
+        Guid examId,
+        Guid studentUserId,
+        CancellationToken cancellationToken = default);
+}
