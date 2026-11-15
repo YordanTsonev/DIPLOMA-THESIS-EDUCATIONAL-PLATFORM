@@ -1,0 +1,147 @@
+:host {
+  display: grid;
+  gap: 20px;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+h1 {
+  margin: 0 0 4px;
+  font-size: 1.5rem;
+}
+
+.timer {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  padding: 8px 16px;
+  border: 1px solid var(--ep-accent);
+  border-radius: var(--ep-radius);
+
+  &.is-low {
+    border-color: var(--ep-danger);
+    background: var(--ep-danger-surface);
+  }
+}
+
+.timer-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--ep-muted);
+}
+
+.timer-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--ep-accent);
+}
+
+.is-low .timer-value {
+  color: var(--ep-danger);
+}
+
+.status.is-done {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--ep-success);
+  background: var(--ep-success-surface);
+  color: var(--ep-success);
+  font-size: 0.875rem;
+}
+
+.description {
+  margin: 0 0 14px;
+  white-space: pre-wrap;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.question-list {
+  margin: 0;
+  padding: 0 0 0 22px;
+  display: grid;
+  gap: 18px;
+}
+
+.question-list > li {
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--ep-line);
+
+  &:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+}
+
+.question-head {
+  margin-bottom: 6px;
+  font-size: 0.875rem;
+  color: var(--ep-muted);
+}
+
+.question-text {
+  margin: 0 0 12px;
+  white-space: pre-wrap;
+}
+
+.options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.option {
+  font: inherit;
+  width: 100%;
+  text-align: left;
+  padding: 10px 14px;
+  border: 1px solid var(--ep-line);
+  border-radius: 8px;
+  background: var(--ep-surface);
+  color: var(--ep-ink);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #f6f8fa;
+  }
+
+  &.is-picked {
+    border-color: var(--ep-accent);
+    background: var(--ep-accent);
+    color: var(--ep-accent-ink);
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.85;
+  }
+}
+
+.hint {
+  margin: 8px 0 0;
+  font-size: 0.8125rem;
+}
+
+textarea {
+  width: 100%;
+  font: inherit;
+  resize: vertical;
+  padding: 10px;
+  border: 1px solid var(--ep-line);
+  border-radius: 8px;
+}

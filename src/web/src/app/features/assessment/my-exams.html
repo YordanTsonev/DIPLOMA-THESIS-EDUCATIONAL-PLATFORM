@@ -1,0 +1,60 @@
+<section class="ep-card">
+  <h1>Тестове</h1>
+
+  @if (error(); as message) {
+    <p class="ep-alert is-error" role="alert">{{ message }}</p>
+  }
+
+  @if (loading()) {
+    <p class="ep-muted">Зареждане…</p>
+  } @else if (exams().length === 0) {
+    <p class="ep-muted">Нямате зададени тестове.</p>
+  } @else {
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Заглавие</th>
+          <th scope="col">Предмет</th>
+          <th scope="col">Време</th>
+          <th scope="col">Въпроси</th>
+          <th scope="col">Състояние</th>
+          <th scope="col">Резултат</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (exam of exams(); track exam.examId) {
+          <tr>
+            <td>{{ exam.title }}</td>
+            <td class="ep-muted">{{ exam.subjectName }}</td>
+            <td>{{ exam.durationMinutes }} мин</td>
+            <td>{{ exam.questionCount }}</td>
+            <td>
+              <span class="status" [attr.data-status]="status(exam)">{{ status(exam) }}</span>
+            </td>
+            <td>
+              @if (exam.isReleased) {
+                <span class="mark">{{ exam.mark | number: '1.0-2' }}</span>
+                <span class="ep-muted">{{ exam.score }} / {{ exam.maxScore }} т.</span>
+              } @else {
+                <span class="ep-muted">—</span>
+              }
+            </td>
+            <td>
+              @if (!exam.isSubmitted) {
+                <button
+                  class="ep-button"
+                  type="button"
+                  [disabled]="busy() || !exam.isOpen"
+                  (click)="enter(exam)"
+                >
+                  {{ exam.attemptId ? 'Продължаване' : 'Започване' }}
+                </button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</section>

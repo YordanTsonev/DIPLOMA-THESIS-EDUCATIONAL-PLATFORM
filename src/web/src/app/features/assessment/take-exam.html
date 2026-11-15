@@ -1,0 +1,101 @@
+@if (loading()) {
+  <section class="ep-card">
+    <p class="ep-muted">Зареждане…</p>
+  </section>
+} @else if (sheet(); as data) {
+  <section class="ep-card sticky">
+    <div class="head">
+      <div>
+        <h1>{{ data.title }}</h1>
+        <p class="ep-muted">{{ data.subjectName }}</p>
+      </div>
+
+      @if (data.isSubmitted) {
+        <span class="status is-done">предаден</span>
+      } @else {
+        <div class="timer" [class.is-low]="isLow()">
+          <span class="timer-label">остава</span>
+          <span class="timer-value">{{ clock() }}</span>
+        </div>
+      }
+    </div>
+
+    @if (error(); as message) {
+      <p class="ep-alert is-error" role="alert">{{ message }}</p>
+    }
+    @if (notice(); as message) {
+      <p class="ep-alert is-success" role="status">{{ message }}</p>
+    }
+
+    @if (data.description) {
+      <p class="description">{{ data.description }}</p>
+    }
+
+    @if (data.isSubmitted) {
+      <button class="ep-button" type="button" (click)="back()">Към списъка</button>
+    } @else {
+      <div class="actions">
+        <button
+          class="ep-button ep-button-secondary"
+          type="button"
+          [disabled]="busy()"
+          (click)="save()"
+        >
+          Запазване
+        </button>
+        <button class="ep-button" type="button" [disabled]="busy()" (click)="submit()">
+          Предаване
+        </button>
+      </div>
+    }
+  </section>
+
+  <section class="ep-card">
+    <ol class="question-list">
+      @for (question of data.questions; track question.id) {
+        <li>
+          <div class="question-head">
+            <strong>{{ question.points }} т.</strong>
+          </div>
+          <p class="question-text">{{ question.text }}</p>
+
+          @if (question.kind === 'OpenText') {
+            <textarea
+              rows="5"
+              maxlength="8000"
+              [disabled]="data.isSubmitted"
+              [value]="answers()[question.id]?.text ?? ''"
+              (input)="setText(question.id, $event)"
+            ></textarea>
+          } @else {
+            <ul class="options">
+              @for (option of question.options; track option.id) {
+                <li>
+                  <button
+                    type="button"
+                    class="option"
+                    [class.is-picked]="isPicked(question.id, option.id)"
+                    [disabled]="data.isSubmitted"
+                    (click)="toggle(question, option.id)"
+                  >
+                    {{ option.text }}
+                  </button>
+                </li>
+              }
+            </ul>
+            @if (question.kind === 'MultipleChoice') {
+              <p class="hint ep-muted">Може да изберете повече от един отговор.</p>
+            }
+          }
+        </li>
+      }
+    </ol>
+  </section>
+} @else {
+  <section class="ep-card">
+    @if (error(); as message) {
+      <p class="ep-alert is-error" role="alert">{{ message }}</p>
+    }
+    <button class="ep-button" type="button" (click)="back()">Към списъка</button>
+  </section>
+}

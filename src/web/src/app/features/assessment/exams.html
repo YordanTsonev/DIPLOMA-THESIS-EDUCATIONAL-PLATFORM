@@ -1,0 +1,308 @@
+<section class="ep-card">
+  <div class="head">
+    <h1>Тестове</h1>
+    @if (assignments().length > 0) {
+      <button class="ep-button" type="button" (click)="toggleForm()">
+        {{ formOpen() ? 'Отказ' : 'Нов тест' }}
+      </button>
+    }
+  </div>
+
+  @if (error(); as message) {
+    <p class="ep-alert is-error" role="alert">{{ message }}</p>
+  }
+  @if (notice(); as message) {
+    <p class="ep-alert is-success" role="status">{{ message }}</p>
+  }
+
+  @if (formOpen()) {
+    <form class="create-form" [formGroup]="createForm" (ngSubmit)="create()" novalidate>
+      <div class="ep-field grow">
+        <label for="assignment">Предмет и клас</label>
+        <select id="assignment" formControlName="teachingAssignmentId">
+          @for (assignment of assignments(); track assignment.id) {
+            <option [value]="assignment.id">
+              {{ assignment.subjectName }} — {{ assignment.schoolClassName }}
+            </option>
+          }
+        </select>
+      </div>
+      <div class="ep-field grow">
+        <label for="title">Заглавие</label>
+        <input id="title" formControlName="title" maxlength="160" />
+      </div>
+      <div class="ep-field narrow">
+        <label for="duration">Минути</label>
+        <input id="duration" type="number" min="5" max="240" formControlName="durationMinutes" />
+      </div>
+      <div class="ep-field full">
+        <label for="description">Указания</label>
+        <textarea
+          id="description"
+          rows="2"
+          formControlName="description"
+          maxlength="2000"
+        ></textarea>
+      </div>
+      <button class="ep-button" type="submit" [disabled]="busy()">Създаване</button>
+    </form>
+  }
+
+  @if (loading()) {
+    <p class="ep-muted">Зареждане…</p>
+  } @else if (exams().length === 0) {
+    <p class="ep-muted">Още не сте създали тестове.</p>
+  } @else {
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Заглавие</th>
+          <th scope="col">Предмет</th>
+          <th scope="col">Време</th>
+          <th scope="col">Въпроси</th>
+          <th scope="col">Точки</th>
+          <th scope="col">Състояние</th>
+          <th scope="col">Явили се</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (exam of exams(); track exam.id) {
+          <tr class="exam-row" [class.is-active]="selected()?.id === exam.id" (click)="open(exam)">
+            <td>{{ exam.title }}</td>
+            <td class="ep-muted">{{ exam.subjectName }} — {{ exam.schoolClassName }}</td>
+            <td>{{ exam.durationMinutes }} мин</td>
+            <td>{{ exam.questionCount }}</td>
+            <td>{{ exam.maxScore }}</td>
+            <td>
+              @if (exam.isPublished) {
+                <span class="status is-live">публикуван</span>
+              } @else {
+                <span class="status">чернова</span>
+              }
+            </td>
+            <td>
+              {{ exam.attemptCount }}
+              @if (exam.awaitingReview > 0) {
+                <span class="badge is-warn">{{ exam.awaitingReview }} за проверка</span>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</section>
+
+@if (selected(); as exam) {
+  <section class="ep-card">
+    <div class="head">
+      <h2>{{ exam.title }}</h2>
+      <div class="actions">
+        @if (!exam.isPublished) {
+          <button class="ep-button" type="button" [disabled]="busy()" (click)="publish()">
+            Публикуване
+          </button>
+        }
+        <button class="ep-button ep-button-secondary" type="button" (click)="removeExam(exam)">
+          Премахване
+        </button>
+      </div>
+    </div>
+
+    @if (exam.description) {
+      <p class="description">{{ exam.description }}</p>
+    }
+
+    @if (!exam.isPublished) {
+      <form class="inline-form" [formGroup]="addForm" (ngSubmit)="addItem()" novalidate>
+        <div class="ep-field grow">
+          <label for="question">Добавяне на въпрос</label>
+          <select id="question" formControlName="questionId">
+            <option value="">— изберете —</option>
+            @for (question of available(); track question.id) {
+              <option [value]="question.id">
+                {{ kindLabels[question.kind] }} · {{ question.text }}
+              </option>
+            }
+          </select>
+        </div>
+        <div class="ep-field narrow">
+          <label for="points">Точки</label>
+          <input id="points" type="number" min="1" max="100" formControlName="points" />
+        </div>
+        <button class="ep-button" type="submit" [disabled]="busy()">Добавяне</button>
+      </form>
+    }
+
+    @if (exam.items.length === 0) {
+      <p class="ep-muted">Тестът още няма въпроси.</p>
+    } @else {
+      <ol class="item-list">
+        @for (item of exam.items; track item.questionId) {
+          <li>
+            <div class="item-head">
+              <span class="badge">{{ kindLabels[item.question.kind] ?? item.question.kind }}</span>
+              <strong>{{ item.points }} т.</strong>
+              @if (!exam.isPublished) {
+                <button
+                  class="ep-button ep-button-secondary"
+                  type="button"
+                  (click)="removeItem(item.questionId)"
+                >
+                  Премахване
+                </button>
+              }
+            </div>
+            <p class="item-text">{{ item.question.text }}</p>
+          </li>
+        }
+      </ol>
+    }
+  </section>
+
+  @if (exam.isPublished) {
+    <section class="ep-card">
+      <h2>Явили се</h2>
+
+      @if (attempts().length === 0) {
+        <p class="ep-muted">Още никой не се е явил.</p>
+      } @else {
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Ученик</th>
+              <th scope="col">Предаден</th>
+              <th scope="col">Точки</th>
+              <th scope="col">Състояние</th>
+              <th scope="col">Оценка</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (attempt of attempts(); track attempt.id) {
+              <tr
+                class="exam-row"
+                [class.is-active]="openAttempt()?.id === attempt.id"
+                (click)="showAttempt(attempt)"
+              >
+                <td>{{ attempt.studentName }}</td>
+                <td>
+                  @if (attempt.submittedAt) {
+                    {{ attempt.submittedAt | date: 'short' }}
+                  } @else {
+                    <span class="ep-muted">в процес</span>
+                  }
+                </td>
+                <td>{{ attempt.score ?? 0 }} / {{ attempt.maxScore }}</td>
+                <td>
+                  @if (attempt.isReleased) {
+                    <span class="status is-live">публикуван</span>
+                  } @else if (attempt.isFullyScored) {
+                    <span class="status">за публикуване</span>
+                  } @else {
+                    <span class="status is-warn">за проверка</span>
+                  }
+                </td>
+                <td>
+                  @if (attempt.mark !== null) {
+                    <span class="mark">{{ attempt.mark | number: '1.0-2' }}</span>
+                  } @else {
+                    <span class="ep-muted"
+                      >{{ attempt.suggestedMark | number: '1.0-2' }} предл.</span
+                    >
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
+  }
+}
+
+@if (openAttempt(); as attempt) {
+  <section class="ep-card">
+    <div class="head">
+      <h2>{{ attempt.studentName }}</h2>
+      @if (!attempt.isReleased && attempt.isFullyScored) {
+        <button class="ep-button" type="button" [disabled]="busy()" (click)="release(attempt)">
+          Публикуване на резултата ({{ attempt.suggestedMark | number: '1.0-2' }})
+        </button>
+      }
+    </div>
+
+    <p class="ep-muted">
+      {{ attempt.score ?? 0 }} / {{ attempt.maxScore }} точки
+      @if (attempt.isReleased) {
+        · оценка {{ attempt.mark | number: '1.0-2' }} · нанесена в дневника
+      }
+    </p>
+
+    <ul class="answer-list">
+      @for (answer of attempt.answers; track answer.questionId) {
+        <li>
+          <div class="item-head">
+            <span class="badge">{{ kindLabels[answer.kind] ?? answer.kind }}</span>
+            <strong> {{ answer.awardedPoints ?? '—' }} / {{ answer.points }} т. </strong>
+            @if (answer.kind === 'OpenText' && !attempt.isReleased) {
+              <button
+                class="ep-button ep-button-secondary"
+                type="button"
+                (click)="startReview(answer.questionId, answer.awardedPoints, answer.feedback)"
+              >
+                Оценяване
+              </button>
+            }
+          </div>
+          <p class="item-text">{{ answer.questionText }}</p>
+
+          @if (answer.kind === 'OpenText') {
+            <p class="given">{{ answer.givenText || '(без отговор)' }}</p>
+          } @else {
+            <ul class="answers">
+              @for (option of answer.options; track option.id) {
+                <li
+                  [class.is-correct]="option.isCorrect"
+                  [class.is-picked]="answer.selectedOptionIds.includes(option.id)"
+                >
+                  {{ option.text }}
+                  @if (answer.selectedOptionIds.includes(option.id)) {
+                    <span class="tick">избран</span>
+                  }
+                </li>
+              }
+            </ul>
+          }
+
+          @if (answer.feedback) {
+            <p class="feedback">{{ answer.feedback }}</p>
+          }
+
+          @if (reviewForm.getRawValue().questionId === answer.questionId) {
+            <form class="inline-form" [formGroup]="reviewForm" (ngSubmit)="review()" novalidate>
+              <div class="ep-field narrow">
+                <label [attr.for]="'pts-' + answer.questionId">Точки</label>
+                <input
+                  [id]="'pts-' + answer.questionId"
+                  type="number"
+                  min="0"
+                  [max]="answer.points"
+                  formControlName="points"
+                />
+              </div>
+              <div class="ep-field grow">
+                <label [attr.for]="'fb-' + answer.questionId">Коментар</label>
+                <input
+                  [id]="'fb-' + answer.questionId"
+                  formControlName="feedback"
+                  maxlength="1000"
+                />
+              </div>
+              <button class="ep-button" type="submit" [disabled]="busy()">Записване</button>
+            </form>
+          }
+        </li>
+      }
+    </ul>
+  </section>
+}
