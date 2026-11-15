@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { describeError } from '../../core/auth/problem-details';
+import { Router } from '@angular/router';
 import { HomeworkService, StudentAssignment } from '../../core/homework/homework.service';
 
 @Component({
@@ -21,6 +22,7 @@ import { HomeworkService, StudentAssignment } from '../../core/homework/homework
 export class MyHomeworkComponent implements OnInit {
   private readonly homework = inject(HomeworkService);
   private readonly formBuilder = inject(FormBuilder);
+  private readonly router = inject(Router);
 
   protected readonly assignments = signal<readonly StudentAssignment[]>([]);
   protected readonly selected = signal<StudentAssignment | null>(null);
@@ -51,7 +53,21 @@ export class MyHomeworkComponent implements OnInit {
     }
   }
 
+  protected async toExam(item: StudentAssignment): Promise<void> {
+    if (item.examId) {
+      await this.router.navigate(['/student/exams', item.examId]);
+    }
+  }
+
   protected status(item: StudentAssignment): string {
+    if (item.examId) {
+      if (item.examReleased) {
+        return 'проверено';
+      }
+
+      return item.examSubmitted ? 'предадено' : item.isOverdue ? 'просрочено' : 'предстои';
+    }
+
     if (item.submission?.reviewedAt) {
       return 'проверено';
     }

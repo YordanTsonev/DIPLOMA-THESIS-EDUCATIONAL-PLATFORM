@@ -37,9 +37,25 @@
       </div>
       <div class="ep-field checkbox">
         <label for="isGraded">
-          <input id="isGraded" type="checkbox" formControlName="isGraded" />
+          <input
+            id="isGraded"
+            type="checkbox"
+            formControlName="isGraded"
+            [disabled]="createForm.getRawValue().examId !== ''"
+          />
           с оценка
         </label>
+      </div>
+      <div class="ep-field grow">
+        <label for="exam">Решава се като тест (по избор)</label>
+        <select id="exam" formControlName="examId">
+          <option value="">— без тест —</option>
+          @for (exam of examsFor(createForm.getRawValue().teachingAssignmentId); track exam.id) {
+            <option [value]="exam.id">
+              {{ exam.title }} · {{ exam.questionCount }} въпроса · {{ exam.durationMinutes }} мин
+            </option>
+          }
+        </select>
       </div>
       <div class="ep-field full">
         <label for="description">Условие</label>
@@ -93,6 +109,9 @@
               }
               @if (item.fileName) {
                 <span class="badge">файл</span>
+              }
+              @if (item.examId) {
+                <span class="badge is-graded">тест</span>
               }
             </td>
             <td class="ep-muted">{{ item.subjectName }} — {{ item.schoolClassName }}</td>
