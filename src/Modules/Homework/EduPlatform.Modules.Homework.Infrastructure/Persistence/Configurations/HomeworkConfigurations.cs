@@ -28,6 +28,7 @@ internal sealed class AssignmentConfiguration : IEntityTypeConfiguration<Assignm
 
         builder.Ignore(assignment => assignment.DomainEvents);
         builder.Ignore(assignment => assignment.HasAttachment);
+        builder.Ignore(assignment => assignment.IsExam);
         builder.HasIndex(assignment => assignment.TeachingAssignmentId);
     }
 }
