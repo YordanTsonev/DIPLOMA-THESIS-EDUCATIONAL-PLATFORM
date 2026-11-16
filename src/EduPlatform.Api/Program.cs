@@ -2,6 +2,7 @@ using System.Globalization;
 using EduPlatform.Api.Authorization;
 using EduPlatform.Api.Configuration;
 using EduPlatform.Api.Endpoints;
+using EduPlatform.Api.Hosting;
 using EduPlatform.Api.Middleware;
 using EduPlatform.BuildingBlocks.Application;
 using EduPlatform.BuildingBlocks.Events;
@@ -66,6 +67,7 @@ try
     builder.Services.AddGradebookModule(configuration);
     builder.Services.AddHomeworkModule(configuration);
     builder.Services.AddAssessmentModule(configuration);
+    builder.Services.AddHostedService<ExpiredAttemptSweeper>();
 
     // ---- Authentication ------------------------------------------------------------
     var jwt = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
