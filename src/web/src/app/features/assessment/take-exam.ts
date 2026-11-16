@@ -16,6 +16,9 @@ import {
 } from '../../core/assessment/assessment.service';
 import { describeError } from '../../core/auth/problem-details';
 
+const AUTOSAVE_DELAY_MS = 3000;
+const FINAL_SAVE_AT_SECONDS = 5;
+
 @Component({
   selector: 'app-take-exam',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -36,6 +39,11 @@ export class TakeExamComponent implements OnInit {
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly notice = signal<string | null>(null);
+  protected readonly savedAt = signal<string | null>(null);
+
+  private readonly dirty = signal(false);
+  private pending: ReturnType<typeof setTimeout> | null = null;
+  private flushing = false;
 
   protected readonly clock = computed(() => {
     const total = this.secondsLeft();
@@ -72,6 +80,7 @@ export class TakeExamComponent implements OnInit {
     }
 
     this.answers.set(next);
+    this.dirty.set(false);
 
     if (!sheet.isSubmitted) {
       this.tick();
@@ -83,13 +92,56 @@ export class TakeExamComponent implements OnInit {
       const left = this.secondsLeft() - 1;
       this.secondsLeft.set(Math.max(0, left));
 
+      if (left === FINAL_SAVE_AT_SECONDS) {
+        void this.flush();
+      }
+
       if (left <= 0) {
         clearInterval(timer);
         void this.submit(true);
       }
     }, 1000);
 
-    this.destroyRef.onDestroy(() => clearInterval(timer));
+    this.destroyRef.onDestroy(() => {
+      clearInterval(timer);
+      this.cancelPending();
+    });
+  }
+
+  private touch(): void {
+    this.dirty.set(true);
+    this.cancelPending();
+    this.pending = setTimeout(() => void this.flush(), AUTOSAVE_DELAY_MS);
+  }
+
+  private cancelPending(): void {
+    if (this.pending) {
+      clearTimeout(this.pending);
+      this.pending = null;
+    }
+  }
+
+  private async flush(): Promise<string | null> {
+    const sheet = this.sheet();
+
+    if (!sheet || sheet.isSubmitted || !this.dirty() || this.flushing) {
+      return null;
+    }
+
+    this.cancelPending();
+    this.flushing = true;
+    this.dirty.set(false);
+
+    try {
+      await this.assessment.saveAnswers(sheet.attemptId, this.payload());
+      this.savedAt.set(new Date().toLocaleTimeString('bg-BG', { hour: '2-digit', minute: '2-digit' }));
+      return null;
+    } catch (error) {
+      this.dirty.set(true);
+      return describeError(error);
+    } finally {
+      this.flushing = false;
+    }
   }
 
   protected setText(questionId: string, event: Event): void {
@@ -98,6 +150,7 @@ export class TakeExamComponent implements OnInit {
       ...this.answers(),
       [questionId]: { ...this.answers()[questionId], text: value },
     });
+    this.touch();
   }
 
   protected toggle(question: SheetQuestion, optionId: string): void {
@@ -114,6 +167,7 @@ export class TakeExamComponent implements OnInit {
           : [...current.selected, optionId];
 
     this.answers.set({ ...this.answers(), [question.id]: { ...current, selected } });
+    this.touch();
   }
 
   protected isPicked(questionId: string, optionId: string): boolean {
@@ -130,15 +184,17 @@ export class TakeExamComponent implements OnInit {
     this.busy.set(true);
     this.error.set(null);
     this.notice.set(null);
+    this.dirty.set(true);
 
-    try {
-      await this.assessment.saveAnswers(sheet.attemptId, this.payload());
+    const failure = await this.flush();
+
+    if (failure) {
+      this.error.set(failure);
+    } else {
       this.notice.set('Отговорите са запазени.');
-    } catch (error) {
-      this.error.set(describeError(error));
-    } finally {
-      this.busy.set(false);
     }
+
+    this.busy.set(false);
   }
 
   protected async submit(automatic = false): Promise<void> {
@@ -150,12 +206,17 @@ export class TakeExamComponent implements OnInit {
 
     this.busy.set(true);
     this.error.set(null);
+    this.cancelPending();
+
+    const failure = await this.flush();
+
+    if (failure && !automatic) {
+      this.error.set(failure);
+      this.busy.set(false);
+      return;
+    }
 
     try {
-      if (!automatic) {
-        await this.assessment.saveAnswers(sheet.attemptId, this.payload());
-      }
-
       const submitted = await this.assessment.submit(sheet.attemptId);
       this.sheet.set(submitted);
       this.secondsLeft.set(0);

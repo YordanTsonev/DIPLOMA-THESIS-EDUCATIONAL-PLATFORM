@@ -67,6 +67,11 @@ h1 {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+  align-items: center;
+}
+
+.saved {
+  font-size: 0.8125rem;
 }
 
 .question-list {

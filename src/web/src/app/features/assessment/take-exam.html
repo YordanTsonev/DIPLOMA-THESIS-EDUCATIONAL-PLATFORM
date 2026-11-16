@@ -46,7 +46,13 @@
         <button class="ep-button" type="button" [disabled]="busy()" (click)="submit()">
           Предаване
         </button>
+        @if (savedAt(); as moment) {
+          <span class="saved ep-muted">запазено в {{ moment }}</span>
+        }
       </div>
+      <p class="hint ep-muted">
+        Отговорите се запазват автоматично, а времето се мери на сървъра.
+      </p>
     }
   </section>
 
