@@ -390,3 +390,75 @@ internal static class AttemptSheet
         return hash;
     }
 }
+
+public sealed record GetMyResultQuery(Guid ExamId, Guid StudentUserId) : IQuery<AttemptReviewDto>;
+
+internal sealed class GetMyResultHandler(
+    IAssessmentRepository repository,
+    ISchoolDirectory school) : IQueryHandler<GetMyResultQuery, AttemptReviewDto>
+{
+    public async Task<AttemptReviewDto> HandleAsync(GetMyResultQuery query, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        var attempt = await repository
+            .FindAttemptOfStudentAsync(query.ExamId, query.StudentUserId, cancellationToken)
+            .ConfigureAwait(false)
+            ?? throw new DomainException("You have not taken this test.");
+
+        if (!attempt.IsReleased)
+        {
+            throw new ForbiddenException("The result of this test has not been released yet.");
+        }
+
+        var exam = await repository.FindExamAsync(attempt.ExamId, cancellationToken).ConfigureAwait(false)
+            ?? throw new DomainException("Test not found.");
+
+        var questions = await repository
+            .ListQuestionsAsync([.. exam.Items.Select(item => item.QuestionId)], cancellationToken)
+            .ConfigureAwait(false);
+
+        var byId = questions.ToDictionary(question => question.Id);
+        var points = exam.Items.ToDictionary(item => item.QuestionId, item => item.Points);
+        var assignment = await school.FindAssignmentAsync(exam.TeachingAssignmentId, cancellationToken)
+            .ConfigureAwait(false);
+
+        var answers = new List<ReviewedAnswerDto>(attempt.Answers.Count);
+
+        foreach (var item in exam.Items.OrderBy(entry => entry.Position))
+        {
+            if (!byId.TryGetValue(item.QuestionId, out var question))
+            {
+                continue;
+            }
+
+            var given = attempt.Answers.SingleOrDefault(entry => entry.QuestionId == item.QuestionId);
+
+            answers.Add(new ReviewedAnswerDto(
+                question.Id,
+                question.Kind.ToString(),
+                question.Text,
+                question.Explanation,
+                points.GetValueOrDefault(item.QuestionId),
+                given?.AwardedPoints ?? 0,
+                given?.Feedback,
+                given?.Text,
+                given?.SelectedOptionIds ?? [],
+                [.. question.Options
+                    .OrderBy(option => option.Position)
+                    .Select(option => new QuestionOptionDto(
+                        option.Id, option.Text, option.IsCorrect, option.Position))]));
+        }
+
+        return new AttemptReviewDto(
+            attempt.Id,
+            exam.Id,
+            exam.Title,
+            assignment?.SubjectName ?? string.Empty,
+            attempt.Score ?? 0,
+            attempt.MaxScore,
+            attempt.Mark!.Value,
+            attempt.ReleasedAt!.Value,
+            answers);
+    }
+}

@@ -93,6 +93,12 @@ export const routes: Routes = [
             title: 'Тестове — EduPlatform',
           },
           {
+            path: 'exams/:examId/result',
+            loadComponent: () =>
+              import('./features/assessment/exam-result').then((m) => m.ExamResultComponent),
+            title: 'Резултат — EduPlatform',
+          },
+          {
             path: 'exams/:examId',
             loadComponent: () =>
               import('./features/assessment/take-exam').then((m) => m.TakeExamComponent),

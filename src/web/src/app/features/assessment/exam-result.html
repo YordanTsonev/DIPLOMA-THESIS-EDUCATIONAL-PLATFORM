@@ -1,0 +1,73 @@
+@if (loading()) {
+  <section class="ep-card">
+    <p class="ep-muted">Зареждане…</p>
+  </section>
+} @else if (review(); as data) {
+  <section class="ep-card">
+    <div class="head">
+      <div>
+        <h1>{{ data.examTitle }}</h1>
+        <p class="ep-muted">{{ data.subjectName }}</p>
+      </div>
+      <div class="score">
+        <span class="score-label">оценка</span>
+        <span class="score-value">{{ data.mark | number: '1.0-2' }}</span>
+        <span class="ep-muted">{{ data.score }} / {{ data.maxScore }} точки</span>
+      </div>
+    </div>
+    <button class="ep-button ep-button-secondary" type="button" (click)="back()">
+      Към списъка
+    </button>
+  </section>
+
+  <section class="ep-card">
+    <ol class="answer-list">
+      @for (answer of data.answers; track answer.questionId) {
+        <li [class.is-full]="isFull(answer)" [class.is-missed]="isMissed(answer)">
+          <div class="answer-head">
+            <span class="badge">{{ kindLabels[answer.kind] ?? answer.kind }}</span>
+            <strong>{{ answer.awardedPoints }} / {{ answer.points }} т.</strong>
+          </div>
+          <p class="question-text">{{ answer.questionText }}</p>
+
+          @if (answer.kind === 'OpenText') {
+            <p class="given">{{ answer.givenText || '(без отговор)' }}</p>
+          } @else {
+            <ul class="options">
+              @for (option of answer.options; track option.id) {
+                <li
+                  [class.is-correct]="option.isCorrect"
+                  [class.is-picked]="picked(answer, option.id)"
+                  [class.is-wrong]="picked(answer, option.id) && !option.isCorrect"
+                >
+                  {{ option.text }}
+                  @if (picked(answer, option.id) && option.isCorrect) {
+                    <span class="tag">вашият отговор · верен</span>
+                  } @else if (picked(answer, option.id)) {
+                    <span class="tag">вашият отговор · грешен</span>
+                  } @else if (option.isCorrect) {
+                    <span class="tag">верен отговор</span>
+                  }
+                </li>
+              }
+            </ul>
+          }
+
+          @if (answer.feedback) {
+            <p class="feedback"><strong>Коментар от учителя:</strong> {{ answer.feedback }}</p>
+          }
+          @if (answer.explanation) {
+            <p class="explanation">{{ answer.explanation }}</p>
+          }
+        </li>
+      }
+    </ol>
+  </section>
+} @else {
+  <section class="ep-card">
+    @if (error(); as message) {
+      <p class="ep-alert is-error" role="alert">{{ message }}</p>
+    }
+    <button class="ep-button" type="button" (click)="back()">Към списъка</button>
+  </section>
+}

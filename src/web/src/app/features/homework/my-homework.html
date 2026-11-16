@@ -147,6 +147,9 @@
             Резултат {{ item.examScore }} / {{ item.examMaxScore }} точки, оценка
             {{ item.examMark | number: '1.0-2' }}.
           </p>
+          <button class="ep-button" type="button" (click)="toExamResult(item)">
+            Преглед на теста
+          </button>
         } @else if (item.examSubmitted) {
           <p class="ep-muted">Тестът е предаден и чака проверка.</p>
         } @else {

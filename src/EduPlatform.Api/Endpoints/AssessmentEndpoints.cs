@@ -282,6 +282,23 @@ internal static class AssessmentEndpoints
             .WithName("ListMyExams")
             .Produces<IReadOnlyList<StudentExamDto>>();
 
+        group.MapGet("/result/{examId:guid}", async (
+                Guid examId,
+                ICurrentUser currentUser,
+                IDispatcher dispatcher,
+                CancellationToken cancellationToken) =>
+            {
+                if (currentUser.UserId is not { } userId)
+                {
+                    return Results.Unauthorized();
+                }
+
+                return Results.Ok(await dispatcher.QueryAsync(
+                    new GetMyResultQuery(examId, userId), cancellationToken));
+            })
+            .WithName("GetMyExamResult")
+            .Produces<AttemptReviewDto>();
+
         group.MapPost("/start/{examId:guid}", async (
                 Guid examId,
                 ICurrentUser currentUser,

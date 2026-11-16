@@ -48,6 +48,10 @@ export class MyExamsComponent implements OnInit {
     return exam.isOpen ? 'отворен' : 'затворен';
   }
 
+  protected async review(exam: StudentExam): Promise<void> {
+    await this.router.navigate(['/student/exams', exam.examId, 'result']);
+  }
+
   protected async enter(exam: StudentExam): Promise<void> {
     if (exam.isSubmitted || this.busy()) {
       return;

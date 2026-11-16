@@ -41,7 +41,11 @@
               }
             </td>
             <td>
-              @if (!exam.isSubmitted) {
+              @if (exam.isReleased) {
+                <button class="ep-button ep-button-secondary" type="button" (click)="review(exam)">
+                  Преглед
+                </button>
+              } @else if (!exam.isSubmitted) {
                 <button
                   class="ep-button"
                   type="button"

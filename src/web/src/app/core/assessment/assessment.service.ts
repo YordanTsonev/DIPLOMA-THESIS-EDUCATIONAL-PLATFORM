@@ -104,6 +104,31 @@ export interface AttemptSheet {
   readonly questions: readonly SheetQuestion[];
 }
 
+export interface ReviewedAnswer {
+  readonly questionId: string;
+  readonly kind: string;
+  readonly questionText: string;
+  readonly explanation: string | null;
+  readonly points: number;
+  readonly awardedPoints: number;
+  readonly feedback: string | null;
+  readonly givenText: string | null;
+  readonly selectedOptionIds: readonly string[];
+  readonly options: readonly QuestionOption[];
+}
+
+export interface AttemptReview {
+  readonly attemptId: string;
+  readonly examId: string;
+  readonly examTitle: string;
+  readonly subjectName: string;
+  readonly score: number;
+  readonly maxScore: number;
+  readonly mark: number;
+  readonly releasedAt: string;
+  readonly answers: readonly ReviewedAnswer[];
+}
+
 export interface StudentExam {
   readonly examId: string;
   readonly title: string;
@@ -258,6 +283,10 @@ export class AssessmentService {
 
   mine(): Promise<StudentExam[]> {
     return firstValueFrom(this.http.get<StudentExam[]>('/api/v1/attempts/me'));
+  }
+
+  result(examId: string): Promise<AttemptReview> {
+    return firstValueFrom(this.http.get<AttemptReview>(`/api/v1/attempts/result/${examId}`));
   }
 
   start(examId: string): Promise<AttemptSheet> {

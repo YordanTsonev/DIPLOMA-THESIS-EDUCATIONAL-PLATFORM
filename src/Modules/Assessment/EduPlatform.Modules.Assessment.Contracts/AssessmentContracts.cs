@@ -129,3 +129,26 @@ public interface IExamDirectory
         Guid studentUserId,
         CancellationToken cancellationToken = default);
 }
+
+public sealed record ReviewedAnswerDto(
+    Guid QuestionId,
+    string Kind,
+    string QuestionText,
+    string? Explanation,
+    int Points,
+    int AwardedPoints,
+    string? Feedback,
+    string? GivenText,
+    IReadOnlyList<Guid> SelectedOptionIds,
+    IReadOnlyList<QuestionOptionDto> Options);
+
+public sealed record AttemptReviewDto(
+    Guid AttemptId,
+    Guid ExamId,
+    string ExamTitle,
+    string SubjectName,
+    int Score,
+    int MaxScore,
+    decimal Mark,
+    DateTimeOffset ReleasedAt,
+    IReadOnlyList<ReviewedAnswerDto> Answers);

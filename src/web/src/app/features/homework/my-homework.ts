@@ -59,6 +59,12 @@ export class MyHomeworkComponent implements OnInit {
     }
   }
 
+  protected async toExamResult(item: StudentAssignment): Promise<void> {
+    if (item.examId) {
+      await this.router.navigate(['/student/exams', item.examId, 'result']);
+    }
+  }
+
   protected status(item: StudentAssignment): string {
     if (item.examId) {
       if (item.examReleased) {
