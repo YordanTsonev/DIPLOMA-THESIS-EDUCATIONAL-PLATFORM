@@ -7,6 +7,7 @@ import {
   HomeworkService,
   Submission,
 } from '../../core/homework/homework.service';
+import { AssessmentService, Exam } from '../../core/assessment/assessment.service';
 import { SchoolService } from '../../core/school/school.service';
 import { TeachingAssignment } from '../../core/school/school.models';
 
@@ -20,6 +21,7 @@ import { TeachingAssignment } from '../../core/school/school.models';
 export class TeacherHomeworkComponent implements OnInit {
   private readonly homework = inject(HomeworkService);
   private readonly school = inject(SchoolService);
+  private readonly assessment = inject(AssessmentService);
   private readonly formBuilder = inject(FormBuilder);
 
   protected readonly subjects = signal<readonly TeachingAssignment[]>([]);
@@ -34,6 +36,7 @@ export class TeacherHomeworkComponent implements OnInit {
   protected readonly notice = signal<string | null>(null);
 
   protected readonly chosenFile = signal<File | null>(null);
+  protected readonly publishedExams = signal<readonly Exam[]>([]);
 
   protected readonly createForm = this.formBuilder.nonNullable.group({
     teachingAssignmentId: ['', Validators.required],
@@ -41,6 +44,7 @@ export class TeacherHomeworkComponent implements OnInit {
     description: ['', Validators.maxLength(4000)],
     dueOn: ['', Validators.required],
     isGraded: [true],
+    examId: [''],
   });
 
   protected readonly reviewForm = this.formBuilder.nonNullable.group({
@@ -53,13 +57,15 @@ export class TeacherHomeworkComponent implements OnInit {
     this.loading.set(true);
 
     try {
-      const [subjects, assignments] = await Promise.all([
+      const [subjects, assignments, exams] = await Promise.all([
         this.school.assignments(),
         this.homework.assignments(),
+        this.assessment.exams(),
       ]);
 
       this.subjects.set(subjects);
       this.assignments.set(assignments);
+      this.publishedExams.set(exams.filter((exam) => exam.isPublished));
 
       if (subjects.length > 0) {
         this.createForm.patchValue({ teachingAssignmentId: subjects[0].id });
@@ -73,6 +79,12 @@ export class TeacherHomeworkComponent implements OnInit {
 
   protected toggleForm(): void {
     this.formOpen.set(!this.formOpen());
+  }
+
+  protected examsFor(teachingAssignmentId: string): readonly Exam[] {
+    return this.publishedExams().filter(
+      (exam) => exam.teachingAssignmentId === teachingAssignmentId,
+    );
   }
 
   protected pick(event: Event): void {
@@ -114,12 +126,13 @@ export class TeacherHomeworkComponent implements OnInit {
           title: value.title,
           description: value.description.trim() || null,
           dueOn: value.dueOn,
-          isGraded: value.isGraded,
+          isGraded: value.examId ? false : value.isGraded,
+          examId: value.examId || null,
         },
         this.chosenFile(),
       );
 
-      this.createForm.patchValue({ title: '', description: '' });
+      this.createForm.patchValue({ title: '', description: '', examId: '' });
       this.chosenFile.set(null);
       this.formOpen.set(false);
       this.notice.set('Домашното е зададено.');

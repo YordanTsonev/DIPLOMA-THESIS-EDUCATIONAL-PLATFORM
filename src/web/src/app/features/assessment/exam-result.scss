@@ -1,0 +1,138 @@
+:host {
+  display: grid;
+  gap: 20px;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+h1 {
+  margin: 0 0 4px;
+  font-size: 1.5rem;
+}
+
+.score {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  padding: 8px 16px;
+  border: 1px solid var(--ep-accent);
+  border-radius: var(--ep-radius);
+}
+
+.score-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--ep-muted);
+}
+
+.score-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ep-accent);
+}
+
+.answer-list {
+  margin: 0;
+  padding: 0 0 0 22px;
+  display: grid;
+  gap: 18px;
+}
+
+.answer-list > li {
+  padding: 14px;
+  border: 1px solid var(--ep-line);
+  border-left-width: 4px;
+  border-radius: 8px;
+
+  &.is-full {
+    border-left-color: var(--ep-success);
+  }
+
+  &.is-missed {
+    border-left-color: var(--ep-danger);
+  }
+}
+
+.answer-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.badge {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--ep-accent);
+  color: var(--ep-accent);
+}
+
+.question-text {
+  margin: 0 0 12px;
+  white-space: pre-wrap;
+}
+
+.options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.options li {
+  padding: 9px 12px;
+  border: 1px solid var(--ep-line);
+  border-radius: 6px;
+  font-size: 0.9375rem;
+
+  &.is-correct {
+    border-color: var(--ep-success);
+    background: var(--ep-success-surface);
+    color: var(--ep-success);
+  }
+
+  &.is-wrong {
+    border-color: var(--ep-danger);
+    background: var(--ep-danger-surface);
+    color: var(--ep-danger);
+  }
+}
+
+.tag {
+  float: right;
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
+.given {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--ep-line);
+  border-radius: 6px;
+  white-space: pre-wrap;
+}
+
+.feedback {
+  margin: 10px 0 0;
+  padding: 9px 11px;
+  border-left: 3px solid var(--ep-accent);
+  background: #f6f8fa;
+  font-size: 0.9375rem;
+}
+
+.explanation {
+  margin: 8px 0 0;
+  font-size: 0.875rem;
+  color: var(--ep-muted);
+}

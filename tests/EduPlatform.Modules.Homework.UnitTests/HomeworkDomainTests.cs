@@ -55,6 +55,30 @@ public sealed class AssignmentTests
         assignment.AcceptsSubmissionOn(Today.AddDays(4)).ShouldBeFalse();
     }
 
+    [Fact]
+    public void A_homework_backed_by_a_test_cannot_also_be_graded_by_hand()
+    {
+        Should.Throw<DomainException>(() => Create(isGraded: true).AttachExam(Guid.CreateVersion7()));
+    }
+
+    [Fact]
+    public void A_homework_without_its_own_mark_can_point_at_a_test()
+    {
+        var assignment = Create(isGraded: false);
+        var examId = Guid.CreateVersion7();
+
+        assignment.AttachExam(examId);
+
+        assignment.IsExam.ShouldBeTrue();
+        assignment.ExamId.ShouldBe(examId);
+    }
+
+    [Fact]
+    public void An_empty_test_reference_is_rejected()
+    {
+        Should.Throw<DomainException>(() => Create(isGraded: false).AttachExam(Guid.Empty));
+    }
+
     internal static Assignment Create(
         string? title = "Задачи 1-10",
         string? description = null,

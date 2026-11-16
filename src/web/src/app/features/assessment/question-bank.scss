@@ -1,0 +1,149 @@
+:host {
+  display: block;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.create-form,
+.toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--ep-line);
+
+  .ep-field {
+    margin-bottom: 0;
+  }
+
+  .grow {
+    flex: 1;
+    min-width: 180px;
+  }
+
+  .full {
+    flex-basis: 100%;
+  }
+
+  .checkbox label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+}
+
+textarea {
+  width: 100%;
+  font: inherit;
+  resize: vertical;
+}
+
+.options {
+  display: grid;
+  gap: 8px;
+}
+
+.options-label {
+  font-size: 0.8125rem;
+  color: var(--ep-muted);
+  text-transform: uppercase;
+}
+
+.option-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.option-text {
+  flex: 1;
+  font: inherit;
+  padding: 7px 10px;
+  border: 1px solid var(--ep-line);
+  border-radius: 6px;
+}
+
+.question-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.question-list > li {
+  padding: 12px;
+  border: 1px solid var(--ep-line);
+  border-radius: 8px;
+}
+
+.question-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.badge {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--ep-accent);
+  color: var(--ep-accent);
+}
+
+.question-text {
+  margin: 0 0 8px;
+  white-space: pre-wrap;
+}
+
+.answers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  font-size: 0.9375rem;
+}
+
+.answers li {
+  padding: 5px 9px;
+  border-radius: 6px;
+  background: #f6f8fa;
+
+  &.is-correct {
+    background: var(--ep-success-surface);
+    color: var(--ep-success);
+    font-weight: 600;
+  }
+}
+
+.tick {
+  font-size: 0.75rem;
+  margin-left: 6px;
+  opacity: 0.8;
+}
+
+.explanation {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-left: 3px solid var(--ep-accent);
+  background: #f6f8fa;
+  font-size: 0.875rem;
+}

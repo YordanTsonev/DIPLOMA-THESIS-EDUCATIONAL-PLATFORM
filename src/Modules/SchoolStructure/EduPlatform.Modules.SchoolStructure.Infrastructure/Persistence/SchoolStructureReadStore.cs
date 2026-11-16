@@ -387,6 +387,9 @@ internal sealed class SchoolStructureReadStore(SchoolStructureDbContext dbContex
         return [];
     }
 
+    public Task<IReadOnlyList<SubjectDto>> ListSubjectsAsync(CancellationToken cancellationToken = default) =>
+        ListSubjectsAsync(includeInactive: false, cancellationToken);
+
     public async Task<IReadOnlyList<ChildDto>> ListChildrenAsync(
         Guid parentUserId,
         CancellationToken cancellationToken = default)

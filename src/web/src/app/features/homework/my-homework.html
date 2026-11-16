@@ -43,6 +43,9 @@
               @if (item.fileName) {
                 <span class="badge">файл</span>
               }
+              @if (item.examId) {
+                <span class="badge is-graded">тест</span>
+              }
             </td>
             <td class="ep-muted">{{ item.subjectName }}</td>
             <td [class.is-overdue]="item.isOverdue && !item.submission">{{ item.dueOn }}</td>
@@ -50,7 +53,15 @@
               <span class="status" [attr.data-status]="status(item)">{{ status(item) }}</span>
             </td>
             <td>
-              @if (item.submission?.mark !== null && item.submission?.mark !== undefined) {
+              @if (item.examId) {
+                @if (item.examMark !== null) {
+                  <span class="mark" [attr.data-value]="item.examMark! >= 3 ? 'pass' : 'fail'">
+                    {{ item.examMark | number: '1.0-2' }}
+                  </span>
+                } @else {
+                  <span class="ep-muted">—</span>
+                }
+              } @else if (item.submission?.mark !== null && item.submission?.mark !== undefined) {
                 <span
                   class="mark"
                   [attr.data-value]="item.submission!.mark! >= 3 ? 'pass' : 'fail'"
@@ -125,7 +136,27 @@
       }
     }
 
-    @if (!selected()?.submission?.reviewedAt) {
+    @if (item.examId) {
+      <div class="exam-box">
+        <p>
+          Това домашно се решава като тест — {{ item.examQuestionCount }} въпроса,
+          {{ item.examDurationMinutes }} минути.
+        </p>
+        @if (item.examReleased) {
+          <p class="ep-muted">
+            Резултат {{ item.examScore }} / {{ item.examMaxScore }} точки, оценка
+            {{ item.examMark | number: '1.0-2' }}.
+          </p>
+          <button class="ep-button" type="button" (click)="toExamResult(item)">
+            Преглед на теста
+          </button>
+        } @else if (item.examSubmitted) {
+          <p class="ep-muted">Тестът е предаден и чака проверка.</p>
+        } @else {
+          <button class="ep-button" type="button" (click)="toExam(item)">Към теста</button>
+        }
+      </div>
+    } @else if (!selected()?.submission?.reviewedAt) {
       <form [formGroup]="submitForm" (ngSubmit)="submit()" novalidate>
         <div class="ep-field">
           <label for="text">Вашият отговор</label>

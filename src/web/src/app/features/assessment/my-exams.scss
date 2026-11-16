@@ -1,0 +1,66 @@
+:host {
+  display: block;
+}
+
+h1 {
+  margin: 0 0 16px;
+  font-size: 1.5rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--ep-line);
+  vertical-align: middle;
+}
+
+th {
+  font-size: 0.8125rem;
+  color: var(--ep-muted);
+  text-transform: uppercase;
+}
+
+.status {
+  font-size: 0.8125rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--ep-line);
+  color: var(--ep-muted);
+
+  &[data-status='оценен'] {
+    border-color: var(--ep-success);
+    background: var(--ep-success-surface);
+    color: var(--ep-success);
+  }
+
+  &[data-status='затворен'] {
+    border-color: #ef9a9a;
+    background: var(--ep-danger-surface);
+    color: var(--ep-danger);
+  }
+
+  &[data-status='започнат'] {
+    border-color: #ffcc80;
+    background: #fff3e0;
+    color: #8a5300;
+  }
+}
+
+.mark {
+  display: inline-block;
+  min-width: 34px;
+  text-align: center;
+  font-weight: 700;
+  padding: 3px 7px;
+  margin-right: 8px;
+  border-radius: 6px;
+  background: var(--ep-success-surface);
+  color: var(--ep-success);
+}

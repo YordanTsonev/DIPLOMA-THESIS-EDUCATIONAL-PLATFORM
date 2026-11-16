@@ -124,6 +124,7 @@ internal static class HomeworkEndpoints
                         dueOn,
                         form["isGraded"].ToString() is "true" or "True",
                         userId,
+                        Guid.TryParse(form["examId"], out var examId) ? examId : null,
                         content,
                         file?.FileName,
                         file?.ContentType,

@@ -180,3 +180,17 @@ textarea {
   margin-top: 4px;
   font-size: 0.8125rem;
 }
+
+.exam-box {
+  padding: 14px;
+  border: 1px solid var(--ep-accent);
+  border-radius: 8px;
+
+  p {
+    margin: 0 0 10px;
+  }
+
+  p:last-child {
+    margin-bottom: 0;
+  }
+}

@@ -48,5 +48,13 @@ public interface IGradebookWriter
         string? comment,
         CancellationToken cancellationToken = default);
 
-    Task RemoveHomeworkGradeAsync(Guid gradeId, CancellationToken cancellationToken = default);
+    Task<GradeDto> GiveTestGradeAsync(
+        Guid studentUserId,
+        Guid teachingAssignmentId,
+        decimal value,
+        Guid teacherUserId,
+        string? comment,
+        CancellationToken cancellationToken = default);
+
+    Task RemoveGradeAsync(Guid gradeId, CancellationToken cancellationToken = default);
 }

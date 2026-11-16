@@ -51,6 +51,10 @@ namespace EduPlatform.Modules.Homework.Infrastructure.Persistence.Migrations
                         .HasColumnType("date")
                         .HasColumnName("due_on");
 
+                    b.Property<Guid?>("ExamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("exam_id");
+
                     b.Property<string>("FileName")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")

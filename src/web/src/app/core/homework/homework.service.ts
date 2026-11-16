@@ -33,6 +33,10 @@ export interface HomeworkAssignment {
   readonly studentCount: number;
   readonly fileName: string | null;
   readonly sizeBytes: number | null;
+  readonly examId: string | null;
+  readonly examTitle: string | null;
+  readonly examQuestionCount: number;
+  readonly examDurationMinutes: number;
 }
 
 export interface StudentAssignment {
@@ -47,6 +51,15 @@ export interface StudentAssignment {
   readonly submission: Submission | null;
   readonly fileName: string | null;
   readonly sizeBytes: number | null;
+  readonly examId: string | null;
+  readonly examTitle: string | null;
+  readonly examQuestionCount: number;
+  readonly examDurationMinutes: number;
+  readonly examSubmitted: boolean;
+  readonly examScore: number | null;
+  readonly examMaxScore: number;
+  readonly examMark: number | null;
+  readonly examReleased: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -74,6 +87,7 @@ export class HomeworkService {
       description: string | null;
       dueOn: string;
       isGraded: boolean;
+      examId: string | null;
     },
     file: File | null,
   ): Promise<HomeworkAssignment> {
@@ -83,6 +97,10 @@ export class HomeworkService {
     form.append('description', payload.description ?? '');
     form.append('dueOn', payload.dueOn);
     form.append('isGraded', `${payload.isGraded}`);
+
+    if (payload.examId) {
+      form.append('examId', payload.examId);
+    }
 
     if (file) {
       form.append('file', file, file.name);

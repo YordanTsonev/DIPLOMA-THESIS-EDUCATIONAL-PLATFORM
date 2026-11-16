@@ -1,3 +1,4 @@
+using EduPlatform.Modules.Assessment.Contracts;
 using EduPlatform.Modules.Homework.Application.Abstractions;
 using EduPlatform.Modules.Homework.Contracts;
 using EduPlatform.Modules.Homework.Domain;
@@ -36,8 +37,14 @@ internal sealed class HomeworkRepository(HomeworkDbContext dbContext) : IHomewor
 internal sealed class HomeworkReadStore(
     HomeworkDbContext dbContext,
     IUserDirectory users,
-    ISchoolDirectory school) : IHomeworkReadStore
+    ISchoolDirectory school,
+    IExamDirectory exams) : IHomeworkReadStore, IHomeworkDirectory
 {
+    public Task<bool> ExamIsUsedAsync(Guid examId, CancellationToken cancellationToken = default) =>
+        dbContext.Assignments
+            .AsNoTracking()
+            .AnyAsync(assignment => assignment.ExamId == examId, cancellationToken);
+
     public async Task<IReadOnlyList<AssignmentDto>> ListAssignmentsAsync(
         IReadOnlyCollection<Guid> teachingAssignmentIds,
         CancellationToken cancellationToken = default)
@@ -63,6 +70,7 @@ internal sealed class HomeworkReadStore(
                 assignment.IsGraded,
                 assignment.FileName,
                 assignment.SizeBytes,
+                assignment.ExamId,
                 Submissions = dbContext.Submissions.Count(item => item.AssignmentId == assignment.Id),
                 Reviewed = dbContext.Submissions
                     .Count(item => item.AssignmentId == assignment.Id && item.ReviewedAt != null),
@@ -83,6 +91,10 @@ internal sealed class HomeworkReadStore(
                 : await school.ListClassStudentsAsync(teaching.SchoolClassId, cancellationToken)
                     .ConfigureAwait(false);
 
+            var exam = row.ExamId is { } examId
+                ? await exams.FindExamSummaryAsync(examId, cancellationToken).ConfigureAwait(false)
+                : null;
+
             result.Add(new AssignmentDto(
                 row.Id,
                 row.TeachingAssignmentId,
@@ -97,7 +109,11 @@ internal sealed class HomeworkReadStore(
                 row.Reviewed,
                 students.Count,
                 row.FileName,
-                row.SizeBytes));
+                row.SizeBytes,
+                row.ExamId,
+                exam?.Title,
+                exam?.QuestionCount ?? 0,
+                exam?.DurationMinutes ?? 0));
         }
 
         return result;
@@ -160,6 +176,14 @@ internal sealed class HomeworkReadStore(
             var teaching = await school.FindAssignmentAsync(row.TeachingAssignmentId, cancellationToken)
                 .ConfigureAwait(false);
 
+            var exam = row.ExamId is { } examId
+                ? await exams.FindExamSummaryAsync(examId, cancellationToken).ConfigureAwait(false)
+                : null;
+
+            var attempt = row.ExamId is { } takenId
+                ? await exams.FindAttemptAsync(takenId, studentUserId, cancellationToken).ConfigureAwait(false)
+                : null;
+
             result.Add(new StudentAssignmentDto(
                 row.Id,
                 row.TeachingAssignmentId,
@@ -171,7 +195,16 @@ internal sealed class HomeworkReadStore(
                 row.DueOn < today,
                 byAssignment.GetValueOrDefault(row.Id),
                 row.FileName,
-                row.SizeBytes));
+                row.SizeBytes,
+                row.ExamId,
+                exam?.Title,
+                exam?.QuestionCount ?? 0,
+                exam?.DurationMinutes ?? 0,
+                attempt?.IsSubmitted ?? false,
+                attempt?.Score,
+                attempt?.MaxScore ?? exam?.MaxScore ?? 0,
+                attempt?.Mark,
+                attempt?.IsReleased ?? false));
         }
 
         return result;

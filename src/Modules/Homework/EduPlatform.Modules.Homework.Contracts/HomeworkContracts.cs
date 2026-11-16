@@ -14,7 +14,11 @@ public sealed record AssignmentDto(
     int ReviewedCount,
     int StudentCount,
     string? FileName,
-    long? SizeBytes);
+    long? SizeBytes,
+    Guid? ExamId,
+    string? ExamTitle,
+    int ExamQuestionCount,
+    int ExamDurationMinutes);
 
 public sealed record SubmissionDto(
     Guid Id,
@@ -42,4 +46,18 @@ public sealed record StudentAssignmentDto(
     bool IsOverdue,
     SubmissionDto? Submission,
     string? FileName,
-    long? SizeBytes);
+    long? SizeBytes,
+    Guid? ExamId,
+    string? ExamTitle,
+    int ExamQuestionCount,
+    int ExamDurationMinutes,
+    bool ExamSubmitted,
+    int? ExamScore,
+    int ExamMaxScore,
+    decimal? ExamMark,
+    bool ExamReleased);
+
+public interface IHomeworkDirectory
+{
+    Task<bool> ExamIsUsedAsync(Guid examId, CancellationToken cancellationToken = default);
+}

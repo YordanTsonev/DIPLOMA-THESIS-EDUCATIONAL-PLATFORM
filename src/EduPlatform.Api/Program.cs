@@ -2,6 +2,7 @@ using System.Globalization;
 using EduPlatform.Api.Authorization;
 using EduPlatform.Api.Configuration;
 using EduPlatform.Api.Endpoints;
+using EduPlatform.Api.Hosting;
 using EduPlatform.Api.Middleware;
 using EduPlatform.BuildingBlocks.Application;
 using EduPlatform.BuildingBlocks.Events;
@@ -11,6 +12,7 @@ using EduPlatform.BuildingBlocks.Infrastructure.Storage;
 using EduPlatform.Modules.Identity.Infrastructure;
 using EduPlatform.Modules.Content.Infrastructure;
 using EduPlatform.Modules.Gradebook.Infrastructure;
+using EduPlatform.Modules.Assessment.Infrastructure;
 using EduPlatform.Modules.Homework.Infrastructure;
 using EduPlatform.Modules.SchoolStructure.Infrastructure;
 using EduPlatform.Modules.Identity.Infrastructure.Security;
@@ -64,6 +66,8 @@ try
     builder.Services.AddContentModule(configuration);
     builder.Services.AddGradebookModule(configuration);
     builder.Services.AddHomeworkModule(configuration);
+    builder.Services.AddAssessmentModule(configuration);
+    builder.Services.AddHostedService<ExpiredAttemptSweeper>();
 
     // ---- Authentication ------------------------------------------------------------
     var jwt = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
@@ -214,6 +218,7 @@ try
     app.MapMaterialEndpoints();
     app.MapGradebookEndpoints();
     app.MapHomeworkEndpoints();
+    app.MapAssessmentEndpoints();
 
     // The fallback authorization policy also covers requests that match no endpoint, which would
     // answer a mistyped URL with 401 instead of 404. This anonymous terminal route restores the

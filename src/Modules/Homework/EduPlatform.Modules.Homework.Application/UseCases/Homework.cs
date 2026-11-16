@@ -1,6 +1,7 @@
 using EduPlatform.BuildingBlocks.Application.Abstractions;
 using EduPlatform.BuildingBlocks.Application.Messaging;
 using EduPlatform.BuildingBlocks.Domain;
+using EduPlatform.Modules.Assessment.Contracts;
 using EduPlatform.Modules.Gradebook.Contracts;
 using EduPlatform.Modules.Homework.Application.Abstractions;
 using EduPlatform.Modules.Homework.Contracts;
@@ -140,6 +141,7 @@ public sealed record CreateAssignmentCommand(
     DateOnly DueOn,
     bool IsGraded,
     Guid TeacherUserId,
+    Guid? ExamId = null,
     Stream? Content = null,
     string? FileName = null,
     string? ContentType = null,
@@ -160,6 +162,7 @@ internal sealed class CreateAssignmentHandler(
     IHomeworkReadStore store,
     ISchoolDirectory school,
     IFileStorage storage,
+    IExamDirectory exams,
     ILogger<CreateAssignmentHandler> logger) : ICommandHandler<CreateAssignmentCommand, AssignmentDto>
 {
     public async Task<AssignmentDto> HandleAsync(
@@ -180,6 +183,24 @@ internal sealed class CreateAssignmentHandler(
             command.IsGraded,
             command.TeacherUserId,
             DateOnly.FromDateTime(DateTime.UtcNow));
+
+        if (command.ExamId is { } examId)
+        {
+            var exam = await exams.FindExamSummaryAsync(examId, cancellationToken).ConfigureAwait(false)
+                ?? throw new DomainException("Test not found.");
+
+            if (exam.TeachingAssignmentId != command.TeachingAssignmentId)
+            {
+                throw new DomainException("The test belongs to another subject or class.");
+            }
+
+            if (!exam.IsPublished)
+            {
+                throw new DomainException("Publish the test before setting it as homework.");
+            }
+
+            assignment.AttachExam(examId);
+        }
 
         string? uploaded = null;
 
@@ -288,6 +309,11 @@ internal sealed class SubmitHomeworkHandler(
             throw new ForbiddenException("This homework was not set for your class.");
         }
 
+        if (assignment.IsExam)
+        {
+            throw new DomainException("This homework is solved by taking its test.");
+        }
+
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
         var existing = await repository
@@ -390,6 +416,11 @@ internal sealed class ReviewSubmissionHandler(
             .EnsureTeachesAsync(school, command.TeacherUserId, assignment.TeachingAssignmentId, cancellationToken)
             .ConfigureAwait(false);
 
+        if (assignment.IsExam)
+        {
+            throw new DomainException("This homework is graded by its test.");
+        }
+
         submission.Review(command.Mark, command.Feedback, command.TeacherUserId, assignment.IsGraded);
 
         Guid? superseded = null;
@@ -414,7 +445,7 @@ internal sealed class ReviewSubmissionHandler(
 
         if (superseded is { } old)
         {
-            await gradebook.RemoveHomeworkGradeAsync(old, cancellationToken).ConfigureAwait(false);
+            await gradebook.RemoveGradeAsync(old, cancellationToken).ConfigureAwait(false);
         }
 
         return await store.FindSubmissionAsync(submission.Id, cancellationToken).ConfigureAwait(false)

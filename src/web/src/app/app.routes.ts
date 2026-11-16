@@ -87,6 +87,24 @@ export const routes: Routes = [
             title: 'Домашни — EduPlatform',
           },
           {
+            path: 'exams',
+            loadComponent: () =>
+              import('./features/assessment/my-exams').then((m) => m.MyExamsComponent),
+            title: 'Тестове — EduPlatform',
+          },
+          {
+            path: 'exams/:examId/result',
+            loadComponent: () =>
+              import('./features/assessment/exam-result').then((m) => m.ExamResultComponent),
+            title: 'Резултат — EduPlatform',
+          },
+          {
+            path: 'exams/:examId',
+            loadComponent: () =>
+              import('./features/assessment/take-exam').then((m) => m.TakeExamComponent),
+            title: 'Тест — EduPlatform',
+          },
+          {
             path: 'grades',
             loadComponent: () =>
               import('./features/gradebook/my-grades').then((m) => m.MyGradesComponent),
@@ -136,6 +154,12 @@ export const routes: Routes = [
                 (m) => m.TeacherHomeworkComponent,
               ),
             title: 'Домашни — EduPlatform',
+          },
+          {
+            path: 'exams',
+            loadComponent: () =>
+              import('./features/assessment/exams').then((m) => m.ExamsComponent),
+            title: 'Тестове — EduPlatform',
           },
           {
             path: 'gradebook',

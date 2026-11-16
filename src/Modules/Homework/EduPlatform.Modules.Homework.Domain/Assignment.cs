@@ -52,6 +52,25 @@ public sealed class Assignment : AggregateRoot
 
     public bool HasAttachment => StorageKey is not null;
 
+    public Guid? ExamId { get; private set; }
+
+    public bool IsExam => ExamId is not null;
+
+    public void AttachExam(Guid examId)
+    {
+        if (examId == Guid.Empty)
+        {
+            throw new DomainException("The test is required.");
+        }
+
+        if (IsGraded)
+        {
+            throw new DomainException("A homework backed by a test is graded by the test itself.");
+        }
+
+        ExamId = examId;
+    }
+
     public void Attach(string storageKey, string? fileName, string? contentType, long sizeBytes)
     {
         if (string.IsNullOrWhiteSpace(storageKey))
