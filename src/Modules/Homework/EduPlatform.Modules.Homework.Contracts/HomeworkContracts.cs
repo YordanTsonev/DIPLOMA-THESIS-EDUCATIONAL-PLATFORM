@@ -56,3 +56,8 @@ public sealed record StudentAssignmentDto(
     int ExamMaxScore,
     decimal? ExamMark,
     bool ExamReleased);
+
+public interface IHomeworkDirectory
+{
+    Task<bool> ExamIsUsedAsync(Guid examId, CancellationToken cancellationToken = default);
+}

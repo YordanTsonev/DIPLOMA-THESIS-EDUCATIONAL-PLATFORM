@@ -4,6 +4,7 @@
     <ProjectReference Include="..\EduPlatform.Modules.Assessment.Contracts\EduPlatform.Modules.Assessment.Contracts.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\EduPlatform.BuildingBlocks.Application\EduPlatform.BuildingBlocks.Application.csproj" />
     <ProjectReference Include="..\..\Gradebook\EduPlatform.Modules.Gradebook.Contracts\EduPlatform.Modules.Gradebook.Contracts.csproj" />
+    <ProjectReference Include="..\..\Homework\EduPlatform.Modules.Homework.Contracts\EduPlatform.Modules.Homework.Contracts.csproj" />
     <ProjectReference Include="..\..\Identity\EduPlatform.Modules.Identity.Contracts\EduPlatform.Modules.Identity.Contracts.csproj" />
     <ProjectReference Include="..\..\SchoolStructure\EduPlatform.Modules.SchoolStructure.Contracts\EduPlatform.Modules.SchoolStructure.Contracts.csproj" />
   </ItemGroup>

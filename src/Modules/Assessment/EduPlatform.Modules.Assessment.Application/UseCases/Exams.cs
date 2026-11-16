@@ -3,6 +3,7 @@ using EduPlatform.BuildingBlocks.Domain;
 using EduPlatform.Modules.Assessment.Application.Abstractions;
 using EduPlatform.Modules.Assessment.Contracts;
 using EduPlatform.Modules.Assessment.Domain;
+using EduPlatform.Modules.Homework.Contracts;
 using EduPlatform.Modules.SchoolStructure.Contracts;
 using FluentValidation;
 
@@ -282,7 +283,8 @@ public sealed record DeleteExamCommand(Guid ExamId, Guid TeacherUserId) : IComma
 
 internal sealed class DeleteExamHandler(
     IAssessmentRepository repository,
-    ISchoolDirectory school) : CommandHandler<DeleteExamCommand>
+    ISchoolDirectory school,
+    IHomeworkDirectory homework) : CommandHandler<DeleteExamCommand>
 {
     protected override async Task HandleCoreAsync(DeleteExamCommand command, CancellationToken cancellationToken)
     {
@@ -294,6 +296,16 @@ internal sealed class DeleteExamHandler(
         await ListExamsHandler
             .EnsureTeachesAsync(school, command.TeacherUserId, exam.TeachingAssignmentId, cancellationToken)
             .ConfigureAwait(false);
+
+        if (await repository.ExamHasAttemptsAsync(exam.Id, cancellationToken).ConfigureAwait(false))
+        {
+            throw new DomainException("This test has already been taken and cannot be deleted.");
+        }
+
+        if (await homework.ExamIsUsedAsync(exam.Id, cancellationToken).ConfigureAwait(false))
+        {
+            throw new DomainException("This test is set as homework and cannot be deleted.");
+        }
 
         repository.RemoveExam(exam);
         await repository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

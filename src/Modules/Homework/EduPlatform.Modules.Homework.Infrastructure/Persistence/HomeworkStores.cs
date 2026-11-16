@@ -38,8 +38,13 @@ internal sealed class HomeworkReadStore(
     HomeworkDbContext dbContext,
     IUserDirectory users,
     ISchoolDirectory school,
-    IExamDirectory exams) : IHomeworkReadStore
+    IExamDirectory exams) : IHomeworkReadStore, IHomeworkDirectory
 {
+    public Task<bool> ExamIsUsedAsync(Guid examId, CancellationToken cancellationToken = default) =>
+        dbContext.Assignments
+            .AsNoTracking()
+            .AnyAsync(assignment => assignment.ExamId == examId, cancellationToken);
+
     public async Task<IReadOnlyList<AssignmentDto>> ListAssignmentsAsync(
         IReadOnlyCollection<Guid> teachingAssignmentIds,
         CancellationToken cancellationToken = default)

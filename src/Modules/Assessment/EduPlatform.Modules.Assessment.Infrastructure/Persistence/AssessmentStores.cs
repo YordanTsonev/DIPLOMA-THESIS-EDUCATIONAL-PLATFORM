@@ -53,6 +53,20 @@ internal sealed class AssessmentRepository(AssessmentDbContext dbContext) : IAss
     public Task<bool> QuestionIsUsedAsync(Guid questionId, CancellationToken cancellationToken = default) =>
         dbContext.Exams.AnyAsync(exam => exam.Items.Any(item => item.QuestionId == questionId), cancellationToken);
 
+    public Task<bool> ExamHasAttemptsAsync(Guid examId, CancellationToken cancellationToken = default) =>
+        dbContext.Attempts.AnyAsync(attempt => attempt.ExamId == examId, cancellationToken);
+
+    public async Task<IReadOnlyList<Attempt>> ListExpiredAttemptsAsync(
+        DateTimeOffset moment,
+        int limit,
+        CancellationToken cancellationToken = default) =>
+        await dbContext.Attempts
+            .Where(attempt => attempt.SubmittedAt == null && attempt.Deadline <= moment)
+            .OrderBy(attempt => attempt.Deadline)
+            .Take(limit)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
     public Task SaveChangesAsync(CancellationToken cancellationToken = default) =>
         dbContext.SaveChangesAsync(cancellationToken);
 }

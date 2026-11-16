@@ -32,6 +32,13 @@ public interface IAssessmentRepository
 
     Task<bool> QuestionIsUsedAsync(Guid questionId, CancellationToken cancellationToken = default);
 
+    Task<bool> ExamHasAttemptsAsync(Guid examId, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<Attempt>> ListExpiredAttemptsAsync(
+        DateTimeOffset moment,
+        int limit,
+        CancellationToken cancellationToken = default);
+
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }
 

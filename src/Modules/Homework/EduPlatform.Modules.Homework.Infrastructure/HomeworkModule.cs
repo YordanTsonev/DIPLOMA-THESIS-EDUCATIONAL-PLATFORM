@@ -2,6 +2,7 @@ using EduPlatform.BuildingBlocks.Application;
 using EduPlatform.BuildingBlocks.Infrastructure.Persistence;
 using EduPlatform.Modules.Homework.Application.Abstractions;
 using EduPlatform.Modules.Homework.Application.UseCases;
+using EduPlatform.Modules.Homework.Contracts;
 using EduPlatform.Modules.Homework.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -29,6 +30,8 @@ public static class HomeworkModule
         services.AddHandlersFromAssembly(typeof(CreateAssignmentCommand).Assembly);
         services.AddScoped<IHomeworkRepository, HomeworkRepository>();
         services.AddScoped<IHomeworkReadStore, HomeworkReadStore>();
+        services.AddScoped<IHomeworkDirectory>(provider =>
+            (HomeworkReadStore)provider.GetRequiredService<IHomeworkReadStore>());
 
         return services;
     }
