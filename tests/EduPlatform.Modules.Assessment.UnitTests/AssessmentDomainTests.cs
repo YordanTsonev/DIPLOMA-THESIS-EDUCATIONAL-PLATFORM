@@ -248,6 +248,21 @@ public sealed class AttemptTests
         attempt.SubmittedAt.ShouldBe(attempt.Deadline);
     }
 
+    [Fact]
+    public void An_expired_attempt_is_scored_from_the_answers_saved_in_time()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var attempt = Start(now, durationMinutes: 5);
+        var questionId = attempt.Answers[0].QuestionId;
+
+        attempt.Answer(questionId, "решението", [], now.AddMinutes(4));
+        attempt.Submit(Outcome(questionId, correct: true, points: 4), now.AddMinutes(30));
+
+        attempt.Answers[0].Text.ShouldBe("решението");
+        attempt.Score.ShouldBe(4);
+        attempt.SubmittedAt.ShouldBe(attempt.Deadline);
+    }
+
     [Theory]
     [InlineData(10, 10, 6.00)]
     [InlineData(9, 10, 6.00)]
