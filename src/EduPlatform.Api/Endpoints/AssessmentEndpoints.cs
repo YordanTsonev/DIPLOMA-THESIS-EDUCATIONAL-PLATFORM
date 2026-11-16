@@ -165,6 +165,32 @@ internal static class AssessmentEndpoints
             .WithName("AddExamItem")
             .Produces<ExamDto>();
 
+        group.MapPost("/{id:guid}/questions", async (
+                Guid id,
+                AddExamQuestionRequest request,
+                ICurrentUser currentUser,
+                IDispatcher dispatcher,
+                CancellationToken cancellationToken) =>
+            {
+                if (currentUser.UserId is not { } userId)
+                {
+                    return Results.Unauthorized();
+                }
+
+                return Results.Ok(await dispatcher.SendAsync(
+                    new AddExamQuestionCommand(
+                        id,
+                        request.Kind,
+                        request.Text,
+                        request.Explanation,
+                        request.Options ?? [],
+                        request.Points,
+                        userId),
+                    cancellationToken));
+            })
+            .WithName("AddExamQuestion")
+            .Produces<ExamDto>();
+
         group.MapDelete("/{id:guid}/items/{questionId:guid}", async (
                 Guid id,
                 Guid questionId,
@@ -363,6 +389,13 @@ internal sealed record CreateExamRequest(
     int DurationMinutes);
 
 internal sealed record AddExamItemRequest(Guid QuestionId, int Points);
+
+internal sealed record AddExamQuestionRequest(
+    QuestionKind Kind,
+    string Text,
+    string? Explanation,
+    IReadOnlyList<OptionInput>? Options,
+    int Points);
 
 internal sealed record PublishExamRequest(DateTimeOffset? OpensAt, DateTimeOffset? ClosesAt);
 

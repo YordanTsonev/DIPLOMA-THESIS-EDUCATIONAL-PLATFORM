@@ -151,6 +151,65 @@ internal sealed class AddExamItemHandler(
     }
 }
 
+public sealed record AddExamQuestionCommand(
+    Guid ExamId,
+    QuestionKind Kind,
+    string Text,
+    string? Explanation,
+    IReadOnlyList<OptionInput> Options,
+    int Points,
+    Guid TeacherUserId) : ICommand<ExamDto>;
+
+internal sealed class AddExamQuestionValidator : AbstractValidator<AddExamQuestionCommand>
+{
+    public AddExamQuestionValidator()
+    {
+        RuleFor(command => command.ExamId).NotEmpty();
+        RuleFor(command => command.Kind).IsInEnum();
+        RuleFor(command => command.Text).NotEmpty().MaximumLength(Question.MaxTextLength);
+        RuleFor(command => command.Explanation).MaximumLength(Question.MaxExplanationLength);
+        RuleFor(command => command.Points).InclusiveBetween(Exam.MinPoints, Exam.MaxPoints);
+    }
+}
+
+internal sealed class AddExamQuestionHandler(
+    IAssessmentRepository repository,
+    IAssessmentReadStore store,
+    ISchoolDirectory school) : ICommandHandler<AddExamQuestionCommand, ExamDto>
+{
+    public async Task<ExamDto> HandleAsync(AddExamQuestionCommand command, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        var exam = await repository.FindExamAsync(command.ExamId, cancellationToken).ConfigureAwait(false)
+            ?? throw new DomainException("Test not found.");
+
+        await ListExamsHandler
+            .EnsureTeachesAsync(school, command.TeacherUserId, exam.TeachingAssignmentId, cancellationToken)
+            .ConfigureAwait(false);
+
+        var assignment = await school.FindAssignmentAsync(exam.TeachingAssignmentId, cancellationToken)
+            .ConfigureAwait(false)
+            ?? throw new DomainException("Teaching assignment not found.");
+
+        var question = Question.Create(
+            assignment.SubjectId,
+            command.Kind,
+            command.Text,
+            command.Explanation,
+            [.. command.Options.Select(option => (option.Text, option.IsCorrect))],
+            command.TeacherUserId);
+
+        repository.AddQuestion(question);
+        exam.AddItem(question.Id, command.Points);
+
+        await repository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        return await store.FindExamAsync(exam.Id, cancellationToken).ConfigureAwait(false)
+            ?? throw new DomainException("The test could not be read back.");
+    }
+}
+
 public sealed record RemoveExamItemCommand(Guid ExamId, Guid QuestionId, Guid TeacherUserId) : ICommand<ExamDto>;
 
 internal sealed class RemoveExamItemHandler(
@@ -171,6 +230,18 @@ internal sealed class RemoveExamItemHandler(
 
         exam.RemoveItem(command.QuestionId);
         await repository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        if (!await repository.QuestionIsUsedAsync(command.QuestionId, cancellationToken).ConfigureAwait(false))
+        {
+            var orphan = await repository.FindQuestionAsync(command.QuestionId, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (orphan is not null)
+            {
+                repository.RemoveQuestion(orphan);
+                await repository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            }
+        }
 
         return await store.FindExamAsync(exam.Id, cancellationToken).ConfigureAwait(false)
             ?? throw new DomainException("The test could not be read back.");
