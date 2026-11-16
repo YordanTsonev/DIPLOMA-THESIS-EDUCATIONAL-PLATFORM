@@ -5,8 +5,8 @@ import {
   AssessmentService,
   Attempt,
   Exam,
+  QUESTION_KINDS,
   QUESTION_KIND_LABELS,
-  Question,
 } from '../../core/assessment/assessment.service';
 import { describeError } from '../../core/auth/problem-details';
 import { SchoolService } from '../../core/school/school.service';
@@ -25,11 +25,11 @@ export class ExamsComponent implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
 
   protected readonly kindLabels = QUESTION_KIND_LABELS;
+  protected readonly kinds = QUESTION_KINDS;
 
   protected readonly assignments = signal<readonly TeachingAssignment[]>([]);
   protected readonly exams = signal<readonly Exam[]>([]);
   protected readonly selected = signal<Exam | null>(null);
-  protected readonly pool = signal<readonly Question[]>([]);
   protected readonly attempts = signal<readonly Attempt[]>([]);
   protected readonly openAttempt = signal<Attempt | null>(null);
 
@@ -46,15 +46,27 @@ export class ExamsComponent implements OnInit {
     durationMinutes: [30, [Validators.required, Validators.min(5), Validators.max(240)]],
   });
 
-  protected readonly addForm = this.formBuilder.nonNullable.group({
-    questionId: ['', Validators.required],
+  protected readonly questionForm = this.formBuilder.nonNullable.group({
+    kind: ['SingleChoice', Validators.required],
+    text: ['', [Validators.required, Validators.maxLength(2000)]],
+    explanation: ['', Validators.maxLength(1000)],
     points: [1, [Validators.required, Validators.min(1), Validators.max(100)]],
   });
+
+  protected readonly options = signal<readonly { text: string; isCorrect: boolean }[]>([
+    { text: '', isCorrect: false },
+    { text: '', isCorrect: false },
+  ]);
 
   protected readonly reviewForm = this.formBuilder.nonNullable.group({
     questionId: [''],
     points: [0, Validators.required],
     feedback: ['', Validators.maxLength(1000)],
+  });
+
+  protected readonly releaseForm = this.formBuilder.nonNullable.group({
+    attemptId: [''],
+    mark: [0, [Validators.required, Validators.min(2), Validators.max(6)]],
   });
 
   async ngOnInit(): Promise<void> {
@@ -120,31 +132,79 @@ export class ExamsComponent implements OnInit {
       const full = await this.assessment.exam(exam.id);
       this.selected.set(full);
 
-      const assignment = this.assignments().find((item) => item.id === full.teachingAssignmentId);
-      this.pool.set(assignment ? await this.assessment.questions(assignment.subjectId) : []);
       this.attempts.set(full.isPublished ? await this.assessment.attempts(full.id) : []);
     } catch (error) {
       this.error.set(describeError(error));
     }
   }
 
-  protected available(): readonly Question[] {
-    const used = new Set(this.selected()?.items.map((item) => item.questionId) ?? []);
-    return this.pool().filter((question) => !used.has(question.id));
+  protected get isOpenKind(): boolean {
+    return this.questionForm.getRawValue().kind === 'OpenText';
   }
 
-  protected async addItem(): Promise<void> {
+  protected addOption(): void {
+    this.options.set([...this.options(), { text: '', isCorrect: false }]);
+  }
+
+  protected removeOption(index: number): void {
+    this.options.set(this.options().filter((_, position) => position !== index));
+  }
+
+  protected setOptionText(index: number, event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.options.set(
+      this.options().map((option, position) =>
+        position === index ? { ...option, text: value } : option,
+      ),
+    );
+  }
+
+  protected toggleCorrect(index: number): void {
+    const single = this.questionForm.getRawValue().kind === 'SingleChoice';
+
+    this.options.set(
+      this.options().map((option, position) => {
+        if (position === index) {
+          return { ...option, isCorrect: !option.isCorrect };
+        }
+
+        return single ? { ...option, isCorrect: false } : option;
+      }),
+    );
+  }
+
+  protected async addQuestion(): Promise<void> {
     const exam = this.selected();
 
-    if (!exam || this.addForm.invalid || this.busy()) {
-      this.addForm.markAllAsTouched();
+    if (!exam || this.questionForm.invalid || this.busy()) {
+      this.questionForm.markAllAsTouched();
       return;
     }
 
+    const value = this.questionForm.getRawValue();
+    const payloadOptions = this.isOpenKind
+      ? []
+      : this.options()
+          .filter((option) => option.text.trim() !== '')
+          .map((option) => ({ text: option.text.trim(), isCorrect: option.isCorrect }));
+
     await this.run(async () => {
-      const { questionId, points } = this.addForm.getRawValue();
-      this.selected.set(await this.assessment.addItem(exam.id, questionId, points));
-      this.addForm.patchValue({ questionId: '' });
+      this.selected.set(
+        await this.assessment.addQuestion(exam.id, {
+          kind: value.kind,
+          text: value.text,
+          explanation: value.explanation.trim() || null,
+          options: payloadOptions,
+          points: value.points,
+        }),
+      );
+
+      this.questionForm.patchValue({ text: '', explanation: '' });
+      this.options.set([
+        { text: '', isCorrect: false },
+        { text: '', isCorrect: false },
+      ]);
+      this.notice.set('Въпросът е добавен.');
     });
   }
 
@@ -187,6 +247,7 @@ export class ExamsComponent implements OnInit {
   protected showAttempt(attempt: Attempt): void {
     this.openAttempt.set(this.openAttempt()?.id === attempt.id ? null : attempt);
     this.reviewForm.reset({ questionId: '', points: 0, feedback: '' });
+    this.releaseForm.reset({ attemptId: '', mark: 0 });
   }
 
   protected startReview(questionId: string, points: number | null, feedback: string | null): void {
@@ -214,10 +275,26 @@ export class ExamsComponent implements OnInit {
     });
   }
 
-  protected async release(attempt: Attempt): Promise<void> {
+  protected startRelease(attempt: Attempt): void {
+    this.releaseForm.setValue({
+      attemptId: attempt.id,
+      mark: attempt.mark ?? attempt.suggestedMark,
+    });
+  }
+
+  protected async release(): Promise<void> {
+    const attempt = this.openAttempt();
+    const { attemptId, mark } = this.releaseForm.getRawValue();
+
+    if (!attempt || attemptId !== attempt.id || this.releaseForm.invalid || this.busy()) {
+      this.releaseForm.markAllAsTouched();
+      return;
+    }
+
     await this.run(async () => {
-      const released = await this.assessment.release(attempt.id, null);
+      const released = await this.assessment.release(attempt.id, mark);
       this.openAttempt.set(released);
+      this.releaseForm.reset({ attemptId: '', mark: 0 });
       this.notice.set(`Резултатът е публикуван с оценка ${released.mark}.`);
     });
   }

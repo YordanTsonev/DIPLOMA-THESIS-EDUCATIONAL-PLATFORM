@@ -190,6 +190,27 @@ export class AssessmentService {
     return firstValueFrom(this.http.post<Exam>('/api/v1/exams', payload));
   }
 
+  addQuestion(
+    examId: string,
+    payload: {
+      kind: string;
+      text: string;
+      explanation: string | null;
+      options: { text: string; isCorrect: boolean }[];
+      points: number;
+    },
+  ): Promise<Exam> {
+    return firstValueFrom(
+      this.http.post<Exam>(`/api/v1/exams/${examId}/questions`, {
+        kind: KIND_NUMBERS[payload.kind],
+        text: payload.text,
+        explanation: payload.explanation,
+        options: payload.options,
+        points: payload.points,
+      }),
+    );
+  }
+
   addItem(examId: string, questionId: string, points: number): Promise<Exam> {
     return firstValueFrom(
       this.http.post<Exam>(`/api/v1/exams/${examId}/items`, { questionId, points }),

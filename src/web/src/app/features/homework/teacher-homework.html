@@ -35,17 +35,14 @@
         <label for="dueOn">Срок</label>
         <input id="dueOn" type="date" formControlName="dueOn" />
       </div>
-      <div class="ep-field checkbox">
-        <label for="isGraded">
-          <input
-            id="isGraded"
-            type="checkbox"
-            formControlName="isGraded"
-            [disabled]="createForm.getRawValue().examId !== ''"
-          />
-          с оценка
-        </label>
-      </div>
+      @if (createForm.getRawValue().examId === '') {
+        <div class="ep-field checkbox">
+          <label for="isGraded">
+            <input id="isGraded" type="checkbox" formControlName="isGraded" />
+            с оценка
+          </label>
+        </div>
+      }
       <div class="ep-field grow">
         <label for="exam">Решава се като тест (по избор)</label>
         <select id="exam" formControlName="examId">

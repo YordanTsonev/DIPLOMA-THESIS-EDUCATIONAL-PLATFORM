@@ -114,15 +114,12 @@
     }
 
     @if (!exam.isPublished) {
-      <form class="inline-form" [formGroup]="addForm" (ngSubmit)="addItem()" novalidate>
+      <form class="question-form" [formGroup]="questionForm" (ngSubmit)="addQuestion()" novalidate>
         <div class="ep-field grow">
-          <label for="question">Добавяне на въпрос</label>
-          <select id="question" formControlName="questionId">
-            <option value="">— изберете —</option>
-            @for (question of available(); track question.id) {
-              <option [value]="question.id">
-                {{ kindLabels[question.kind] }} · {{ question.text }}
-              </option>
+          <label for="kind">Тип въпрос</label>
+          <select id="kind" formControlName="kind">
+            @for (kind of kinds; track kind.value) {
+              <option [value]="kind.value">{{ kind.label }}</option>
             }
           </select>
         </div>
@@ -130,7 +127,53 @@
           <label for="points">Точки</label>
           <input id="points" type="number" min="1" max="100" formControlName="points" />
         </div>
-        <button class="ep-button" type="submit" [disabled]="busy()">Добавяне</button>
+        <div class="ep-field full">
+          <label for="qtext">Въпрос</label>
+          <textarea id="qtext" rows="2" formControlName="text" maxlength="2000"></textarea>
+        </div>
+
+        @if (!isOpenKind) {
+          <div class="options full">
+            <span class="options-label">Отговори — отметнете верните</span>
+            @for (option of options(); track $index) {
+              <div class="option-row">
+                <input
+                  type="checkbox"
+                  [checked]="option.isCorrect"
+                  (change)="toggleCorrect($index)"
+                  [attr.aria-label]="'Верен отговор ' + ($index + 1)"
+                />
+                <input
+                  class="option-text"
+                  [value]="option.text"
+                  (input)="setOptionText($index, $event)"
+                  maxlength="500"
+                  [attr.placeholder]="'Отговор ' + ($index + 1)"
+                />
+                @if (options().length > 2) {
+                  <button
+                    class="ep-button ep-button-secondary"
+                    type="button"
+                    (click)="removeOption($index)"
+                  >
+                    ×
+                  </button>
+                }
+              </div>
+            }
+            @if (options().length < 10) {
+              <button class="ep-button ep-button-secondary" type="button" (click)="addOption()">
+                Още отговор
+              </button>
+            }
+          </div>
+        }
+
+        <div class="ep-field full">
+          <label for="qexplanation">Обяснение (по избор)</label>
+          <input id="qexplanation" formControlName="explanation" maxlength="1000" />
+        </div>
+        <button class="ep-button" type="submit" [disabled]="busy()">Добавяне на въпроса</button>
       </form>
     }
 
@@ -154,6 +197,18 @@
               }
             </div>
             <p class="item-text">{{ item.question.text }}</p>
+            @if (item.question.options.length > 0) {
+              <ul class="answers">
+                @for (option of item.question.options; track option.id) {
+                  <li [class.is-correct]="option.isCorrect">
+                    {{ option.text }}
+                    @if (option.isCorrect) {
+                      <span class="tick">верен</span>
+                    }
+                  </li>
+                }
+              </ul>
+            }
           </li>
         }
       </ol>
@@ -224,10 +279,22 @@
   <section class="ep-card">
     <div class="head">
       <h2>{{ attempt.studentName }}</h2>
-      @if (!attempt.isReleased && attempt.isFullyScored) {
-        <button class="ep-button" type="button" [disabled]="busy()" (click)="release(attempt)">
-          Публикуване на резултата ({{ attempt.suggestedMark | number: '1.0-2' }})
-        </button>
+      @if (attempt.isFullyScored) {
+        @if (releaseForm.getRawValue().attemptId === attempt.id) {
+          <form class="inline-form" [formGroup]="releaseForm" (ngSubmit)="release()" novalidate>
+            <div class="ep-field narrow">
+              <label for="mark">Оценка</label>
+              <input id="mark" type="number" min="2" max="6" step="0.25" formControlName="mark" />
+            </div>
+            <button class="ep-button" type="submit" [disabled]="busy()">
+              {{ attempt.isReleased ? 'Промяна' : 'Публикуване' }}
+            </button>
+          </form>
+        } @else {
+          <button class="ep-button" type="button" (click)="startRelease(attempt)">
+            {{ attempt.isReleased ? 'Промяна на оценката' : 'Публикуване на резултата' }}
+          </button>
+        }
       }
     </div>
 
@@ -235,6 +302,8 @@
       {{ attempt.score ?? 0 }} / {{ attempt.maxScore }} точки
       @if (attempt.isReleased) {
         · оценка {{ attempt.mark | number: '1.0-2' }} · нанесена в дневника
+      } @else if (attempt.isFullyScored) {
+        · платформата предлага {{ attempt.suggestedMark | number: '1.0-2' }}
       }
     </p>
 
@@ -244,7 +313,7 @@
           <div class="item-head">
             <span class="badge">{{ kindLabels[answer.kind] ?? answer.kind }}</span>
             <strong> {{ answer.awardedPoints ?? '—' }} / {{ answer.points }} т. </strong>
-            @if (answer.kind === 'OpenText' && !attempt.isReleased) {
+            @if (answer.kind === 'OpenText') {
               <button
                 class="ep-button ep-button-secondary"
                 type="button"

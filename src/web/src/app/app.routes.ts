@@ -150,12 +150,6 @@ export const routes: Routes = [
             title: 'Домашни — EduPlatform',
           },
           {
-            path: 'questions',
-            loadComponent: () =>
-              import('./features/assessment/question-bank').then((m) => m.QuestionBankComponent),
-            title: 'Въпроси — EduPlatform',
-          },
-          {
             path: 'exams',
             loadComponent: () =>
               import('./features/assessment/exams').then((m) => m.ExamsComponent),

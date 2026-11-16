@@ -69,7 +69,6 @@ const NAVIGATION: Readonly<Record<UserRole, readonly NavItem[]>> = {
     { label: 'Календар', route: '/teacher/calendar' },
     { label: 'Материали', route: '/teacher/materials' },
     { label: 'Домашни', route: '/teacher/homework' },
-    { label: 'Въпроси', route: '/teacher/questions' },
     { label: 'Тестове', route: '/teacher/exams' },
     { label: 'Дневник', route: '/teacher/gradebook' },
   ],
