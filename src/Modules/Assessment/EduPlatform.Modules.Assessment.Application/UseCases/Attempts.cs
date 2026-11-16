@@ -63,6 +63,11 @@ internal sealed class StartAttemptHandler(
             repository.AddAttempt(attempt);
             await repository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
+        else if (attempt.Deadline <= DateTimeOffset.UtcNow
+            && await AttemptSheet.FinalizeAsync(repository, exam, attempt, cancellationToken).ConfigureAwait(false))
+        {
+            await repository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
 
         var questions = await repository
             .ListQuestionsAsync([.. exam.Items.Select(item => item.QuestionId)], cancellationToken)
@@ -137,25 +142,7 @@ internal sealed class SubmitAttemptHandler(
             .ListQuestionsAsync([.. exam.Items.Select(item => item.QuestionId)], cancellationToken)
             .ConfigureAwait(false);
 
-        var outcome = new Dictionary<Guid, (bool IsOpen, bool IsCorrect, int Points)>();
-
-        foreach (var item in exam.Items)
-        {
-            var question = questions.SingleOrDefault(entry => entry.Id == item.QuestionId);
-
-            if (question is null)
-            {
-                continue;
-            }
-
-            var given = attempt.Answers.SingleOrDefault(entry => entry.QuestionId == item.QuestionId);
-            var selected = given?.SelectedOptionIds ?? [];
-
-            outcome[item.QuestionId] =
-                (question.IsOpen, question.IsAnsweredCorrectlyBy([.. selected]), item.Points);
-        }
-
-        attempt.Submit(outcome, DateTimeOffset.UtcNow);
+        attempt.Submit(AttemptSheet.Outcome(exam, attempt, questions), DateTimeOffset.UtcNow);
         await repository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         var assignment = await school.FindAssignmentAsync(exam.TeachingAssignmentId, cancellationToken)
@@ -281,6 +268,45 @@ internal sealed class ReleaseAttemptHandler(
     }
 }
 
+public sealed record FinalizeExpiredAttemptsCommand(int Limit) : ICommand<int>;
+
+internal sealed class FinalizeExpiredAttemptsHandler(IAssessmentRepository repository)
+    : ICommandHandler<FinalizeExpiredAttemptsCommand, int>
+{
+    public async Task<int> HandleAsync(FinalizeExpiredAttemptsCommand command, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        var expired = await repository
+            .ListExpiredAttemptsAsync(DateTimeOffset.UtcNow, command.Limit, cancellationToken)
+            .ConfigureAwait(false);
+
+        var finalized = 0;
+
+        foreach (var attempt in expired)
+        {
+            var exam = await repository.FindExamAsync(attempt.ExamId, cancellationToken).ConfigureAwait(false);
+
+            if (exam is null)
+            {
+                continue;
+            }
+
+            if (await AttemptSheet.FinalizeAsync(repository, exam, attempt, cancellationToken).ConfigureAwait(false))
+            {
+                finalized++;
+            }
+        }
+
+        if (finalized > 0)
+        {
+            await repository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        return finalized;
+    }
+}
+
 internal static class AttemptSheet
 {
     public static async Task EnsureEnrolledAsync(
@@ -317,6 +343,52 @@ internal static class AttemptSheet
             ?? throw new DomainException("Test not found.");
 
         return (exam, attempt);
+    }
+
+    public static Dictionary<Guid, (bool IsOpen, bool IsCorrect, int Points)> Outcome(
+        Exam exam,
+        Attempt attempt,
+        IReadOnlyList<Question> questions)
+    {
+        var outcome = new Dictionary<Guid, (bool IsOpen, bool IsCorrect, int Points)>();
+
+        foreach (var item in exam.Items)
+        {
+            var question = questions.SingleOrDefault(entry => entry.Id == item.QuestionId);
+
+            if (question is null)
+            {
+                continue;
+            }
+
+            var given = attempt.Answers.SingleOrDefault(entry => entry.QuestionId == item.QuestionId);
+            var selected = given?.SelectedOptionIds ?? [];
+
+            outcome[item.QuestionId] =
+                (question.IsOpen, question.IsAnsweredCorrectlyBy([.. selected]), item.Points);
+        }
+
+        return outcome;
+    }
+
+    public static async Task<bool> FinalizeAsync(
+        IAssessmentRepository repository,
+        Exam exam,
+        Attempt attempt,
+        CancellationToken cancellationToken)
+    {
+        if (attempt.IsSubmitted)
+        {
+            return false;
+        }
+
+        var questions = await repository
+            .ListQuestionsAsync([.. exam.Items.Select(item => item.QuestionId)], cancellationToken)
+            .ConfigureAwait(false);
+
+        attempt.Submit(Outcome(exam, attempt, questions), DateTimeOffset.UtcNow);
+
+        return true;
     }
 
     public static AttemptSheetDto Build(
