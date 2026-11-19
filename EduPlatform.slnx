@@ -39,6 +39,12 @@
     <Project Path="src/Modules/Identity/EduPlatform.Modules.Identity.Domain/EduPlatform.Modules.Identity.Domain.csproj" />
     <Project Path="src/Modules/Identity/EduPlatform.Modules.Identity.Infrastructure/EduPlatform.Modules.Identity.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Notifications/">
+    <Project Path="src/Modules/Notifications/EduPlatform.Modules.Notifications.Application/EduPlatform.Modules.Notifications.Application.csproj" />
+    <Project Path="src/Modules/Notifications/EduPlatform.Modules.Notifications.Contracts/EduPlatform.Modules.Notifications.Contracts.csproj" />
+    <Project Path="src/Modules/Notifications/EduPlatform.Modules.Notifications.Domain/EduPlatform.Modules.Notifications.Domain.csproj" />
+    <Project Path="src/Modules/Notifications/EduPlatform.Modules.Notifications.Infrastructure/EduPlatform.Modules.Notifications.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/SchoolStructure/">
     <Project Path="src/Modules/SchoolStructure/EduPlatform.Modules.SchoolStructure.Application/EduPlatform.Modules.SchoolStructure.Application.csproj" />
     <Project Path="src/Modules/SchoolStructure/EduPlatform.Modules.SchoolStructure.Contracts/EduPlatform.Modules.SchoolStructure.Contracts.csproj" />
