@@ -221,13 +221,24 @@ internal sealed class GiveGradeHandler(
                 saved.StudentUserId,
                 "Grade",
                 $"Нова оценка по {saved.SubjectName}",
-                $"{saved.Value:0.##} · {saved.Reason}",
+                $"{saved.Value:0.##} · {ReasonLabel(saved.Reason)}",
                 "/student/grades",
                 cancellationToken)
             .ConfigureAwait(false);
 
         return saved;
     }
+
+    internal static string ReasonLabel(string reason) => reason switch
+    {
+        nameof(GradeReason.Oral) => "Устно изпитване",
+        nameof(GradeReason.Written) => "Писмена работа",
+        nameof(GradeReason.Test) => "Тест",
+        nameof(GradeReason.Homework) => "Домашна работа",
+        nameof(GradeReason.Project) => "Проект",
+        nameof(GradeReason.Activity) => "Активност",
+        _ => reason,
+    };
 
     internal static async Task EnsureTeachesAsync(
         ISchoolDirectory school,
