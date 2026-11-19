@@ -98,17 +98,37 @@ internal static class SchoolEndpoints
 
         group.MapGet("/", async (
                 Guid? academicYearId,
+                ICurrentUser currentUser,
                 IDispatcher dispatcher,
                 CancellationToken cancellationToken) =>
-                Results.Ok(await dispatcher.QueryAsync(new ListClassesQuery(academicYearId), cancellationToken)))
+            {
+                if (currentUser.UserId is not { } userId)
+                {
+                    return Results.Unauthorized();
+                }
+
+                return Results.Ok(await dispatcher.QueryAsync(
+                    new ListClassesQuery(academicYearId, userId, currentUser.Role?.ToString() ?? string.Empty),
+                    cancellationToken));
+            })
             .WithName("ListClasses")
             .Produces<IReadOnlyList<SchoolClassDto>>();
 
         group.MapGet("/{id:guid}/students", async (
                 Guid id,
+                ICurrentUser currentUser,
                 IDispatcher dispatcher,
                 CancellationToken cancellationToken) =>
-                Results.Ok(await dispatcher.QueryAsync(new GetClassStudentsQuery(id), cancellationToken)))
+            {
+                if (currentUser.UserId is not { } userId)
+                {
+                    return Results.Unauthorized();
+                }
+
+                return Results.Ok(await dispatcher.QueryAsync(
+                    new GetClassStudentsQuery(id, userId, currentUser.Role?.ToString() ?? string.Empty),
+                    cancellationToken));
+            })
             .RequireAuthorization(AuthorizationPolicies.TeacherOrAdmin)
             .WithName("ListClassStudents")
             .Produces<IReadOnlyList<ClassStudentDto>>();

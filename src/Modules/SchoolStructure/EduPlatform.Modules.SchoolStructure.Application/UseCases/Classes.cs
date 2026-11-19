@@ -8,29 +8,52 @@ using FluentValidation;
 
 namespace EduPlatform.Modules.SchoolStructure.Application.UseCases;
 
-public sealed record ListClassesQuery(Guid? AcademicYearId = null) : IQuery<IReadOnlyList<SchoolClassDto>>;
+public sealed record ListClassesQuery(Guid? AcademicYearId, Guid UserId, string Role)
+    : IQuery<IReadOnlyList<SchoolClassDto>>;
 
 internal sealed class ListClassesHandler(ISchoolStructureReadStore store)
     : IQueryHandler<ListClassesQuery, IReadOnlyList<SchoolClassDto>>
 {
-    public Task<IReadOnlyList<SchoolClassDto>> HandleAsync(ListClassesQuery query, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<SchoolClassDto>> HandleAsync(
+        ListClassesQuery query,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(query);
-        return store.ListClassesAsync(query.AcademicYearId, cancellationToken);
+
+        var classes = await store.ListClassesAsync(query.AcademicYearId, cancellationToken).ConfigureAwait(false);
+
+        var visible = await store
+            .ListVisibleClassIdsAsync(query.UserId, query.Role, cancellationToken)
+            .ConfigureAwait(false);
+
+        return visible is null
+            ? classes
+            : [.. classes.Where(schoolClass => visible.Contains(schoolClass.Id))];
     }
 }
 
-public sealed record GetClassStudentsQuery(Guid SchoolClassId) : IQuery<IReadOnlyList<ClassStudentDto>>;
+public sealed record GetClassStudentsQuery(Guid SchoolClassId, Guid UserId, string Role)
+    : IQuery<IReadOnlyList<ClassStudentDto>>;
 
 internal sealed class GetClassStudentsHandler(ISchoolStructureReadStore store)
     : IQueryHandler<GetClassStudentsQuery, IReadOnlyList<ClassStudentDto>>
 {
-    public Task<IReadOnlyList<ClassStudentDto>> HandleAsync(
+    public async Task<IReadOnlyList<ClassStudentDto>> HandleAsync(
         GetClassStudentsQuery query,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(query);
-        return store.ListClassStudentsAsync(query.SchoolClassId, cancellationToken);
+
+        var visible = await store
+            .ListVisibleClassIdsAsync(query.UserId, query.Role, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (visible is not null && !visible.Contains(query.SchoolClassId))
+        {
+            throw new ForbiddenException("This class is not yours.");
+        }
+
+        return await store.ListClassStudentsAsync(query.SchoolClassId, cancellationToken).ConfigureAwait(false);
     }
 }
 

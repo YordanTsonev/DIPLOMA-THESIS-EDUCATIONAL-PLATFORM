@@ -82,6 +82,54 @@ internal sealed class SchoolStructureReadStore(SchoolStructureDbContext dbContex
             row.StudentCount)).ToList();
     }
 
+    public async Task<IReadOnlyList<Guid>?> ListVisibleClassIdsAsync(
+        Guid userId,
+        string role,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.Equals(role, "Admin", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        if (string.Equals(role, "Teacher", StringComparison.Ordinal))
+        {
+            var taught = await dbContext.TeachingAssignments
+                .AsNoTracking()
+                .Where(assignment => assignment.TeacherUserId == userId)
+                .Select(assignment => assignment.SchoolClassId)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            var homeroom = await dbContext.SchoolClasses
+                .AsNoTracking()
+                .Where(schoolClass => schoolClass.HomeroomTeacherId == userId)
+                .Select(schoolClass => schoolClass.Id)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            return [.. taught.Concat(homeroom).Distinct()];
+        }
+
+        if (string.Equals(role, "Student", StringComparison.Ordinal))
+        {
+            var own = await FindClassOfStudentAsync(userId, cancellationToken).ConfigureAwait(false);
+            return own is { } id ? [id] : [];
+        }
+
+        if (string.Equals(role, "Parent", StringComparison.Ordinal))
+        {
+            var children = await ListChildrenAsync(userId, cancellationToken).ConfigureAwait(false);
+
+            return [.. children
+                .Where(child => child.SchoolClassId is not null)
+                .Select(child => child.SchoolClassId!.Value)
+                .Distinct()];
+        }
+
+        return [];
+    }
+
     public async Task<SchoolClassDto?> FindClassAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var classes = await ListClassesAsync(null, cancellationToken).ConfigureAwait(false);

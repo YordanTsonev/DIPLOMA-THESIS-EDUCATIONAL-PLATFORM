@@ -67,6 +67,11 @@ public interface ISchoolStructureReadStore
 
     Task<IReadOnlyList<SchoolClassDto>> ListClassesAsync(Guid? academicYearId, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<Guid>?> ListVisibleClassIdsAsync(
+        Guid userId,
+        string role,
+        CancellationToken cancellationToken = default);
+
     Task<SchoolClassDto?> FindClassAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<ClassStudentDto>> ListClassStudentsAsync(Guid schoolClassId, CancellationToken cancellationToken = default);
