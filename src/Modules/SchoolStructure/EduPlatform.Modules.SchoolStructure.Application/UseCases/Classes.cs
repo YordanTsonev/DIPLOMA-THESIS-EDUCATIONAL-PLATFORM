@@ -124,6 +124,37 @@ internal sealed class CreateClassHandler(
     }
 }
 
+public sealed record AssignHomeroomTeacherCommand(Guid SchoolClassId, Guid? TeacherUserId)
+    : ICommand<SchoolClassDto>;
+
+internal sealed class AssignHomeroomTeacherHandler(
+    ISchoolStructureRepository repository,
+    ISchoolStructureReadStore store,
+    IUserDirectory users) : ICommandHandler<AssignHomeroomTeacherCommand, SchoolClassDto>
+{
+    public async Task<SchoolClassDto> HandleAsync(
+        AssignHomeroomTeacherCommand command,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        var schoolClass = await repository.FindClassAsync(command.SchoolClassId, cancellationToken)
+            .ConfigureAwait(false)
+            ?? throw new DomainException("Class not found.");
+
+        if (command.TeacherUserId is { } teacherId)
+        {
+            await CreateClassHandler.EnsureTeacherAsync(users, teacherId, cancellationToken).ConfigureAwait(false);
+        }
+
+        schoolClass.AssignHomeroomTeacher(command.TeacherUserId);
+        await repository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        return await store.FindClassAsync(schoolClass.Id, cancellationToken).ConfigureAwait(false)
+            ?? throw new DomainException("The class could not be read back.");
+    }
+}
+
 public sealed record EnrollStudentCommand(Guid SchoolClassId, Guid StudentUserId) : ICommand;
 
 internal sealed class EnrollStudentValidator : AbstractValidator<EnrollStudentCommand>

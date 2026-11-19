@@ -149,6 +149,17 @@ internal static class SchoolEndpoints
             .WithName("CreateClass")
             .Produces<SchoolClassDto>(StatusCodes.Status201Created);
 
+        group.MapPut("/{id:guid}/homeroom-teacher", async (
+                Guid id,
+                AssignHomeroomTeacherRequest request,
+                IDispatcher dispatcher,
+                CancellationToken cancellationToken) =>
+                Results.Ok(await dispatcher.SendAsync(
+                    new AssignHomeroomTeacherCommand(id, request.TeacherUserId), cancellationToken)))
+            .RequireAuthorization(AuthorizationPolicies.AdminOnly)
+            .WithName("AssignHomeroomTeacher")
+            .Produces<SchoolClassDto>();
+
         group.MapPost("/{id:guid}/students", async (
                 Guid id,
                 EnrollStudentRequest request,
@@ -435,6 +446,8 @@ internal sealed record CreateAcademicYearRequest(string Name, DateOnly StartsOn,
 internal sealed record CreateSubjectRequest(string Name, string Code);
 
 internal sealed record CreateClassRequest(Guid AcademicYearId, int Grade, string Section, Guid? HomeroomTeacherId);
+
+internal sealed record AssignHomeroomTeacherRequest(Guid? TeacherUserId);
 
 internal sealed record EnrollStudentRequest(Guid StudentUserId);
 
