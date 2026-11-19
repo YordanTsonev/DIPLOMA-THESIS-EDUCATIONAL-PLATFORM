@@ -167,6 +167,12 @@ export const routes: Routes = [
               import('./features/gradebook/class-gradebook').then((m) => m.ClassGradebookComponent),
             title: 'Дневник — EduPlatform',
           },
+          {
+            path: 'homeroom',
+            loadComponent: () =>
+              import('./features/gradebook/homeroom').then((m) => m.HomeroomComponent),
+            title: 'Моят клас — EduPlatform',
+          },
         ],
       },
       {

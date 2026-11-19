@@ -71,6 +71,7 @@ const NAVIGATION: Readonly<Record<UserRole, readonly NavItem[]>> = {
     { label: 'Домашни', route: '/teacher/homework' },
     { label: 'Тестове', route: '/teacher/exams' },
     { label: 'Дневник', route: '/teacher/gradebook' },
+    { label: 'Моят клас', route: '/teacher/homeroom' },
   ],
   [UserRole.Parent]: [
     { label: 'Начало', route: '/parent' },

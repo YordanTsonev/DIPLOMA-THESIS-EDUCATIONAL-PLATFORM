@@ -1,0 +1,80 @@
+<section class="ep-card">
+  <div class="head">
+    <div>
+      <h1>Моят клас</h1>
+      <p class="ep-muted">Отсъствия на учениците, на които сте класен ръководител.</p>
+    </div>
+    @if (absences().length > 0) {
+      <button class="ep-button ep-button-secondary" type="button" (click)="toggleFilter()">
+        {{ onlyPending() ? 'Всички' : 'Само неизвинени' }}
+      </button>
+    }
+  </div>
+
+  @if (error(); as message) {
+    <p class="ep-alert is-error" role="alert">{{ message }}</p>
+  }
+  @if (notice(); as message) {
+    <p class="ep-alert is-success" role="status">{{ message }}</p>
+  }
+
+  @if (loading()) {
+    <p class="ep-muted">Зареждане…</p>
+  } @else if (absences().length === 0) {
+    <p class="ep-muted">Не сте класен ръководител на клас, или класът няма записани отсъствия.</p>
+  } @else {
+    <p class="summary">
+      За извиняване: <strong>{{ pendingCount() }}</strong> от {{ absences().length }}
+    </p>
+
+    @if (visible().length === 0) {
+      <p class="ep-muted">Няма неизвинени отсъствия.</p>
+    } @else {
+      <ul class="absence-list">
+        @for (absence of visible(); track absence.id) {
+          <li>
+            <div class="row">
+              <div class="who">
+                <strong>{{ absence.studentName }}</strong>
+                <span class="ep-muted">{{ absence.subjectName }} · {{ absence.period }} час</span>
+              </div>
+              <span class="date">{{ absence.date }}</span>
+              <span class="kind" [attr.data-kind]="absence.kind">{{ label(absence.kind) }}</span>
+
+              @if (absence.kind === 'Excused') {
+                <span class="ep-muted done">извинено</span>
+              } @else {
+                <button
+                  class="ep-button ep-button-secondary"
+                  type="button"
+                  [disabled]="busy()"
+                  (click)="open(absence)"
+                >
+                  Извиняване
+                </button>
+              }
+            </div>
+
+            @if (absence.note && activeId() !== absence.id) {
+              <p class="note ep-muted">{{ absence.note }}</p>
+            }
+
+            @if (activeId() === absence.id) {
+              <form class="excuse" [formGroup]="form" (ngSubmit)="excuse(absence)">
+                <label [for]="'note-' + absence.id">Основание</label>
+                <input
+                  [id]="'note-' + absence.id"
+                  type="text"
+                  formControlName="note"
+                  maxlength="300"
+                  placeholder="Медицинска бележка, заявление от родител…"
+                />
+                <button class="ep-button" type="submit" [disabled]="busy()">Записване</button>
+              </form>
+            }
+          </li>
+        }
+      </ul>
+    }
+  }
+</section>
