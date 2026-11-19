@@ -68,6 +68,10 @@ export class SchoolClassesComponent implements OnInit {
     weeklyHours: [4, [Validators.required, Validators.min(1), Validators.max(40)]],
   });
 
+  protected readonly homeroomForm = this.formBuilder.nonNullable.group({
+    teacherUserId: [''],
+  });
+
   async ngOnInit(): Promise<void> {
     this.loading.set(true);
     try {
@@ -121,8 +125,29 @@ export class SchoolClassesComponent implements OnInit {
     }
   }
 
+  protected async setHomeroomTeacher(): Promise<void> {
+    const current = this.selected();
+
+    if (!current) {
+      return;
+    }
+
+    this.error.set(null);
+
+    try {
+      const teacherUserId = this.homeroomForm.getRawValue().teacherUserId;
+      const updated = await this.school.assignHomeroomTeacher(current.id, teacherUserId || null);
+
+      this.selected.set(updated);
+      this.classes.set(this.classes().map((item) => (item.id === updated.id ? updated : item)));
+    } catch (error) {
+      this.error.set(describeError(error));
+    }
+  }
+
   protected async select(schoolClass: SchoolClass): Promise<void> {
     this.selected.set(schoolClass);
+    this.homeroomForm.reset({ teacherUserId: schoolClass.homeroomTeacherId ?? '' });
     this.detailLoading.set(true);
     this.error.set(null);
     try {

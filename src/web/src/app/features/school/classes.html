@@ -59,6 +59,27 @@
 }
 
 @if (selected(); as current) {
+  @if (isAdmin()) {
+    <section class="ep-card">
+      <h2>{{ current.displayName }} — класен ръководител</h2>
+      <form class="create-row" [formGroup]="homeroomForm" (ngSubmit)="setHomeroomTeacher()">
+        <div class="ep-field">
+          <label for="homeroom">Преподавател</label>
+          <select id="homeroom" formControlName="teacherUserId">
+            <option value="">без класен</option>
+            @for (teacher of teachers(); track teacher.id) {
+              <option [value]="teacher.id">{{ teacher.fullName }}</option>
+            }
+          </select>
+        </div>
+        <button class="ep-button" type="submit">Записване</button>
+      </form>
+      <p class="ep-muted">
+        Класният ръководител извинява отсъствията на учениците от този клас.
+      </p>
+    </section>
+  }
+
   <section class="ep-card">
     <h2>{{ current.displayName }} — ученици</h2>
 
