@@ -6,6 +6,7 @@ using EduPlatform.Modules.Gradebook.Contracts;
 using EduPlatform.Modules.Homework.Application.Abstractions;
 using EduPlatform.Modules.Homework.Contracts;
 using EduPlatform.Modules.Homework.Domain;
+using EduPlatform.Modules.Notifications.Contracts;
 using EduPlatform.Modules.SchoolStructure.Contracts;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
@@ -163,6 +164,7 @@ internal sealed class CreateAssignmentHandler(
     ISchoolDirectory school,
     IFileStorage storage,
     IExamDirectory exams,
+    INotificationWriter notifications,
     ILogger<CreateAssignmentHandler> logger) : ICommandHandler<CreateAssignmentCommand, AssignmentDto>
 {
     public async Task<AssignmentDto> HandleAsync(
@@ -235,8 +237,29 @@ internal sealed class CreateAssignmentHandler(
             .ListAssignmentsAsync([command.TeachingAssignmentId], cancellationToken)
             .ConfigureAwait(false);
 
-        return created.SingleOrDefault(item => item.Id == assignment.Id)
+        var saved = created.SingleOrDefault(item => item.Id == assignment.Id)
             ?? throw new DomainException("The assignment could not be read back.");
+
+        var lesson = await school.FindAssignmentAsync(command.TeachingAssignmentId, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (lesson is not null)
+        {
+            var students = await school
+                .ListClassStudentsAsync(lesson.SchoolClassId, cancellationToken)
+                .ConfigureAwait(false);
+
+            await notifications.SendManyAsync(
+                    [.. students.Select(student => student.StudentUserId)],
+                    saved.ExamId is null ? "Homework" : "Exam",
+                    $"Ново домашно по {saved.SubjectName}",
+                    $"{saved.Title} · до {saved.DueOn:dd.MM}",
+                    "/student/homework",
+                    cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        return saved;
     }
 }
 

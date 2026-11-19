@@ -3,6 +3,7 @@ using EduPlatform.BuildingBlocks.Domain;
 using EduPlatform.Modules.Gradebook.Application.Abstractions;
 using EduPlatform.Modules.Gradebook.Contracts;
 using EduPlatform.Modules.Gradebook.Domain;
+using EduPlatform.Modules.Notifications.Contracts;
 using EduPlatform.Modules.SchoolStructure.Contracts;
 using FluentValidation;
 
@@ -188,7 +189,8 @@ internal sealed class GiveGradeValidator : AbstractValidator<GiveGradeCommand>
 internal sealed class GiveGradeHandler(
     IGradebookRepository repository,
     IGradebookReadStore store,
-    ISchoolDirectory school) : ICommandHandler<GiveGradeCommand, GradeDto>
+    ISchoolDirectory school,
+    INotificationWriter notifications) : ICommandHandler<GiveGradeCommand, GradeDto>
 {
     public async Task<GradeDto> HandleAsync(GiveGradeCommand command, CancellationToken cancellationToken)
     {
@@ -212,8 +214,19 @@ internal sealed class GiveGradeHandler(
         repository.AddGrade(grade);
         await repository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        return await store.FindGradeAsync(grade.Id, cancellationToken).ConfigureAwait(false)
+        var saved = await store.FindGradeAsync(grade.Id, cancellationToken).ConfigureAwait(false)
             ?? throw new DomainException("The grade could not be read back.");
+
+        await notifications.SendAsync(
+                saved.StudentUserId,
+                "Grade",
+                $"Нова оценка по {saved.SubjectName}",
+                $"{saved.Value:0.##} · {saved.Reason}",
+                "/student/grades",
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        return saved;
     }
 
     internal static async Task EnsureTeachesAsync(
