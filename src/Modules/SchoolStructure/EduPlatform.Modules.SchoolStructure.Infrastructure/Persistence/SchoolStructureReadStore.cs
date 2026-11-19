@@ -82,6 +82,35 @@ internal sealed class SchoolStructureReadStore(SchoolStructureDbContext dbContex
             row.StudentCount)).ToList();
     }
 
+    public async Task<Guid?> FindHomeroomTeacherOfStudentAsync(
+        Guid studentUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var schoolClassId = await FindClassOfStudentAsync(studentUserId, cancellationToken).ConfigureAwait(false);
+
+        if (schoolClassId is not { } id)
+        {
+            return null;
+        }
+
+        return await dbContext.SchoolClasses
+            .AsNoTracking()
+            .Where(schoolClass => schoolClass.Id == id)
+            .Select(schoolClass => schoolClass.HomeroomTeacherId)
+            .SingleOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<Guid?> FindHomeroomClassOfTeacherAsync(
+        Guid teacherUserId,
+        CancellationToken cancellationToken = default) =>
+        await dbContext.SchoolClasses
+            .AsNoTracking()
+            .Where(schoolClass => schoolClass.HomeroomTeacherId == teacherUserId)
+            .Select(schoolClass => (Guid?)schoolClass.Id)
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+
     public async Task<IReadOnlyList<Guid>?> ListVisibleClassIdsAsync(
         Guid userId,
         string role,

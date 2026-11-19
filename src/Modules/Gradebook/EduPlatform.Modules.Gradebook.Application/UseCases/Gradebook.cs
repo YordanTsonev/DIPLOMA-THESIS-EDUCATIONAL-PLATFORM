@@ -337,7 +337,37 @@ internal sealed class RecordAbsenceHandler(
     }
 }
 
-public sealed record ExcuseAbsenceCommand(Guid AbsenceId, string? Note, Guid TeacherUserId) : ICommand<AbsenceDto>;
+public sealed record ListHomeroomAbsencesQuery(Guid TeacherUserId) : IQuery<IReadOnlyList<AbsenceDto>>;
+
+internal sealed class ListHomeroomAbsencesHandler(
+    IGradebookReadStore store,
+    ISchoolDirectory school) : IQueryHandler<ListHomeroomAbsencesQuery, IReadOnlyList<AbsenceDto>>
+{
+    public async Task<IReadOnlyList<AbsenceDto>> HandleAsync(
+        ListHomeroomAbsencesQuery query,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        var schoolClassId = await school
+            .FindHomeroomClassOfTeacherAsync(query.TeacherUserId, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (schoolClassId is not { } id)
+        {
+            return [];
+        }
+
+        var students = await school.ListClassStudentsAsync(id, cancellationToken).ConfigureAwait(false);
+
+        return await store
+            .ListAbsencesForStudentsAsync([.. students.Select(student => student.StudentUserId)], cancellationToken)
+            .ConfigureAwait(false);
+    }
+}
+
+public sealed record ExcuseAbsenceCommand(Guid AbsenceId, string? Note, Guid UserId, string Role)
+    : ICommand<AbsenceDto>;
 
 internal sealed class ExcuseAbsenceHandler(
     IGradebookRepository repository,
@@ -351,9 +381,17 @@ internal sealed class ExcuseAbsenceHandler(
         var absence = await repository.FindAbsenceAsync(command.AbsenceId, cancellationToken).ConfigureAwait(false)
             ?? throw new DomainException("Absence not found.");
 
-        await GiveGradeHandler
-            .EnsureTeachesAsync(school, command.TeacherUserId, absence.TeachingAssignmentId, cancellationToken)
-            .ConfigureAwait(false);
+        if (!string.Equals(command.Role, "Admin", StringComparison.Ordinal))
+        {
+            var homeroomTeacherId = await school
+                .FindHomeroomTeacherOfStudentAsync(absence.StudentUserId, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (homeroomTeacherId != command.UserId)
+            {
+                throw new ForbiddenException("Only the homeroom teacher of this class can excuse an absence.");
+            }
+        }
 
         absence.Excuse(command.Note);
         await repository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

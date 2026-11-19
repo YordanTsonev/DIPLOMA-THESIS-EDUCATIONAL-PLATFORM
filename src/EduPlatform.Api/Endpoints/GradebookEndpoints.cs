@@ -163,13 +163,32 @@ internal static class GradebookEndpoints
                 }
 
                 var updated = await dispatcher.SendAsync(
-                    new ExcuseAbsenceCommand(id, request.Note, userId), cancellationToken);
+                    new ExcuseAbsenceCommand(
+                        id, request.Note, userId, currentUser.Role?.ToString() ?? string.Empty),
+                    cancellationToken);
 
                 return Results.Ok(updated);
             })
             .RequireAuthorization(AuthorizationPolicies.TeacherOrAdmin)
             .WithName("ExcuseAbsence")
             .Produces<AbsenceDto>();
+
+        group.MapGet("/homeroom/absences", async (
+                ICurrentUser currentUser,
+                IDispatcher dispatcher,
+                CancellationToken cancellationToken) =>
+            {
+                if (currentUser.UserId is not { } userId)
+                {
+                    return Results.Unauthorized();
+                }
+
+                return Results.Ok(await dispatcher.QueryAsync(
+                    new ListHomeroomAbsencesQuery(userId), cancellationToken));
+            })
+            .RequireAuthorization(AuthorizationPolicies.TeacherOrAdmin)
+            .WithName("ListHomeroomAbsences")
+            .Produces<IReadOnlyList<AbsenceDto>>();
 
         return endpoints;
     }

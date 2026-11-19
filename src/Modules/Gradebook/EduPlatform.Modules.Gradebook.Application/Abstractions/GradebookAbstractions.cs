@@ -39,6 +39,10 @@ public interface IGradebookReadStore
         Guid teachingAssignmentId,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<AbsenceDto>> ListAbsencesForStudentsAsync(
+        IReadOnlyCollection<Guid> studentUserIds,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<AbsenceDto>> ListAbsencesForStudentAsync(
         Guid studentUserId,
         CancellationToken cancellationToken = default);

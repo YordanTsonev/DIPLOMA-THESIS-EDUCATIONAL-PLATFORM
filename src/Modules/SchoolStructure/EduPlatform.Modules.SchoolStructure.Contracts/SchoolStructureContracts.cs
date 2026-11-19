@@ -89,6 +89,14 @@ public interface ISchoolDirectory
 
     Task<Guid?> FindClassOfStudentAsync(Guid studentUserId, CancellationToken cancellationToken = default);
 
+    Task<Guid?> FindHomeroomTeacherOfStudentAsync(
+        Guid studentUserId,
+        CancellationToken cancellationToken = default);
+
+    Task<Guid?> FindHomeroomClassOfTeacherAsync(
+        Guid teacherUserId,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<ClassStudentDto>> ListClassStudentsAsync(
         Guid schoolClassId,
         CancellationToken cancellationToken = default);
