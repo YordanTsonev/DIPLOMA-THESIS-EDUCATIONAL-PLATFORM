@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../core/auth/auth.service';
 import { UserRole } from '../core/auth/auth.models';
+import { Notification, NotificationsService } from '../core/notifications/notifications.service';
 
 interface NavItem {
   readonly label: string;
@@ -21,10 +22,15 @@ interface NavItem {
   styleUrl: './shell.scss',
   templateUrl: './shell.html',
 })
-export class ShellComponent {
+export class ShellComponent implements OnInit {
   private readonly auth = inject(AuthService);
+  private readonly notifications = inject(NotificationsService);
+  private readonly router = inject(Router);
 
   protected readonly user = this.auth.user;
+  protected readonly feed = this.notifications.items;
+  protected readonly unreadCount = this.notifications.unreadCount;
+  protected readonly panelOpen = signal(false);
 
   protected readonly roleLabel = computed(() => {
     const role = this.auth.role();
@@ -36,7 +42,53 @@ export class ShellComponent {
     return role === null ? [] : NAVIGATION[role];
   });
 
+  async ngOnInit(): Promise<void> {
+    await this.reload();
+  }
+
+  private async reload(): Promise<void> {
+    try {
+      await this.notifications.refresh();
+    } catch {
+      this.notifications.clear();
+    }
+  }
+
+  protected async togglePanel(): Promise<void> {
+    const open = !this.panelOpen();
+    this.panelOpen.set(open);
+
+    if (open) {
+      await this.reload();
+    }
+  }
+
+  protected async open(item: Notification): Promise<void> {
+    if (!item.isRead) {
+      try {
+        await this.notifications.markRead(item.id);
+      } catch {
+        this.panelOpen.set(false);
+      }
+    }
+
+    this.panelOpen.set(false);
+
+    if (item.link) {
+      await this.router.navigateByUrl(item.link);
+    }
+  }
+
+  protected async markAllRead(): Promise<void> {
+    try {
+      await this.notifications.markAllRead();
+    } catch {
+      this.panelOpen.set(false);
+    }
+  }
+
   protected async signOut(): Promise<void> {
+    this.notifications.clear();
     await this.auth.logout();
   }
 }
