@@ -1,0 +1,111 @@
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+h1 {
+  margin: 0 0 4px;
+}
+
+.summary {
+  margin: 16px 0 8px;
+  font-size: 0.9375rem;
+}
+
+.absence-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.absence-list > li {
+  border: 1px solid var(--ep-line);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.who {
+  flex: 1;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+}
+
+.who span {
+  font-size: 0.8125rem;
+}
+
+.date {
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.kind {
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 4px 10px;
+  background: var(--ep-surface-alt, #f1eee7);
+}
+
+.kind[data-kind='Unexcused'] {
+  background: #f7e6e4;
+  color: #b3443a;
+}
+
+.kind[data-kind='Late'] {
+  background: #f6ebdc;
+  color: #8a5418;
+}
+
+.kind[data-kind='Excused'] {
+  background: #e8f2ec;
+  color: #2e7d5b;
+}
+
+.done {
+  font-size: 0.8125rem;
+}
+
+.note {
+  margin: 8px 0 0;
+  font-size: 0.8125rem;
+}
+
+.excuse {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ep-line);
+}
+
+.excuse label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.excuse input {
+  flex: 1;
+  min-width: 200px;
+  font: inherit;
+  padding: 9px 11px;
+  border: 1px solid var(--ep-line);
+  border-radius: 8px;
+}

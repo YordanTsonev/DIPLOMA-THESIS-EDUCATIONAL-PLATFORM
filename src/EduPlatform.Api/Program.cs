@@ -14,6 +14,7 @@ using EduPlatform.Modules.Content.Infrastructure;
 using EduPlatform.Modules.Gradebook.Infrastructure;
 using EduPlatform.Modules.Assessment.Infrastructure;
 using EduPlatform.Modules.Homework.Infrastructure;
+using EduPlatform.Modules.Notifications.Infrastructure;
 using EduPlatform.Modules.SchoolStructure.Infrastructure;
 using EduPlatform.Modules.Identity.Infrastructure.Security;
 using HealthChecks.UI.Client;
@@ -67,6 +68,7 @@ try
     builder.Services.AddGradebookModule(configuration);
     builder.Services.AddHomeworkModule(configuration);
     builder.Services.AddAssessmentModule(configuration);
+    builder.Services.AddNotificationsModule(configuration);
     builder.Services.AddHostedService<ExpiredAttemptSweeper>();
 
     // ---- Authentication ------------------------------------------------------------
@@ -219,6 +221,7 @@ try
     app.MapGradebookEndpoints();
     app.MapHomeworkEndpoints();
     app.MapAssessmentEndpoints();
+    app.MapNotificationEndpoints();
 
     // The fallback authorization policy also covers requests that match no endpoint, which would
     // answer a mistyped URL with 401 instead of 404. This anonymous terminal route restores the

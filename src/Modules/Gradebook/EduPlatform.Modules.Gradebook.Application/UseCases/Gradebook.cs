@@ -3,6 +3,7 @@ using EduPlatform.BuildingBlocks.Domain;
 using EduPlatform.Modules.Gradebook.Application.Abstractions;
 using EduPlatform.Modules.Gradebook.Contracts;
 using EduPlatform.Modules.Gradebook.Domain;
+using EduPlatform.Modules.Notifications.Contracts;
 using EduPlatform.Modules.SchoolStructure.Contracts;
 using FluentValidation;
 
@@ -188,7 +189,8 @@ internal sealed class GiveGradeValidator : AbstractValidator<GiveGradeCommand>
 internal sealed class GiveGradeHandler(
     IGradebookRepository repository,
     IGradebookReadStore store,
-    ISchoolDirectory school) : ICommandHandler<GiveGradeCommand, GradeDto>
+    ISchoolDirectory school,
+    INotificationWriter notifications) : ICommandHandler<GiveGradeCommand, GradeDto>
 {
     public async Task<GradeDto> HandleAsync(GiveGradeCommand command, CancellationToken cancellationToken)
     {
@@ -212,9 +214,31 @@ internal sealed class GiveGradeHandler(
         repository.AddGrade(grade);
         await repository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        return await store.FindGradeAsync(grade.Id, cancellationToken).ConfigureAwait(false)
+        var saved = await store.FindGradeAsync(grade.Id, cancellationToken).ConfigureAwait(false)
             ?? throw new DomainException("The grade could not be read back.");
+
+        await notifications.SendAsync(
+                saved.StudentUserId,
+                "Grade",
+                $"Нова оценка по {saved.SubjectName}",
+                $"{saved.Value:0.##} · {ReasonLabel(saved.Reason)}",
+                "/student/grades",
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        return saved;
     }
+
+    internal static string ReasonLabel(string reason) => reason switch
+    {
+        nameof(GradeReason.Oral) => "Устно изпитване",
+        nameof(GradeReason.Written) => "Писмена работа",
+        nameof(GradeReason.Test) => "Тест",
+        nameof(GradeReason.Homework) => "Домашна работа",
+        nameof(GradeReason.Project) => "Проект",
+        nameof(GradeReason.Activity) => "Активност",
+        _ => reason,
+    };
 
     internal static async Task EnsureTeachesAsync(
         ISchoolDirectory school,
@@ -337,7 +361,37 @@ internal sealed class RecordAbsenceHandler(
     }
 }
 
-public sealed record ExcuseAbsenceCommand(Guid AbsenceId, string? Note, Guid TeacherUserId) : ICommand<AbsenceDto>;
+public sealed record ListHomeroomAbsencesQuery(Guid TeacherUserId) : IQuery<IReadOnlyList<AbsenceDto>>;
+
+internal sealed class ListHomeroomAbsencesHandler(
+    IGradebookReadStore store,
+    ISchoolDirectory school) : IQueryHandler<ListHomeroomAbsencesQuery, IReadOnlyList<AbsenceDto>>
+{
+    public async Task<IReadOnlyList<AbsenceDto>> HandleAsync(
+        ListHomeroomAbsencesQuery query,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        var schoolClassId = await school
+            .FindHomeroomClassOfTeacherAsync(query.TeacherUserId, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (schoolClassId is not { } id)
+        {
+            return [];
+        }
+
+        var students = await school.ListClassStudentsAsync(id, cancellationToken).ConfigureAwait(false);
+
+        return await store
+            .ListAbsencesForStudentsAsync([.. students.Select(student => student.StudentUserId)], cancellationToken)
+            .ConfigureAwait(false);
+    }
+}
+
+public sealed record ExcuseAbsenceCommand(Guid AbsenceId, string? Note, Guid UserId, string Role)
+    : ICommand<AbsenceDto>;
 
 internal sealed class ExcuseAbsenceHandler(
     IGradebookRepository repository,
@@ -351,9 +405,17 @@ internal sealed class ExcuseAbsenceHandler(
         var absence = await repository.FindAbsenceAsync(command.AbsenceId, cancellationToken).ConfigureAwait(false)
             ?? throw new DomainException("Absence not found.");
 
-        await GiveGradeHandler
-            .EnsureTeachesAsync(school, command.TeacherUserId, absence.TeachingAssignmentId, cancellationToken)
-            .ConfigureAwait(false);
+        if (!string.Equals(command.Role, "Admin", StringComparison.Ordinal))
+        {
+            var homeroomTeacherId = await school
+                .FindHomeroomTeacherOfStudentAsync(absence.StudentUserId, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (homeroomTeacherId != command.UserId)
+            {
+                throw new ForbiddenException("Only the homeroom teacher of this class can excuse an absence.");
+            }
+        }
 
         absence.Excuse(command.Note);
         await repository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

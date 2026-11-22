@@ -98,17 +98,37 @@ internal static class SchoolEndpoints
 
         group.MapGet("/", async (
                 Guid? academicYearId,
+                ICurrentUser currentUser,
                 IDispatcher dispatcher,
                 CancellationToken cancellationToken) =>
-                Results.Ok(await dispatcher.QueryAsync(new ListClassesQuery(academicYearId), cancellationToken)))
+            {
+                if (currentUser.UserId is not { } userId)
+                {
+                    return Results.Unauthorized();
+                }
+
+                return Results.Ok(await dispatcher.QueryAsync(
+                    new ListClassesQuery(academicYearId, userId, currentUser.Role?.ToString() ?? string.Empty),
+                    cancellationToken));
+            })
             .WithName("ListClasses")
             .Produces<IReadOnlyList<SchoolClassDto>>();
 
         group.MapGet("/{id:guid}/students", async (
                 Guid id,
+                ICurrentUser currentUser,
                 IDispatcher dispatcher,
                 CancellationToken cancellationToken) =>
-                Results.Ok(await dispatcher.QueryAsync(new GetClassStudentsQuery(id), cancellationToken)))
+            {
+                if (currentUser.UserId is not { } userId)
+                {
+                    return Results.Unauthorized();
+                }
+
+                return Results.Ok(await dispatcher.QueryAsync(
+                    new GetClassStudentsQuery(id, userId, currentUser.Role?.ToString() ?? string.Empty),
+                    cancellationToken));
+            })
             .RequireAuthorization(AuthorizationPolicies.TeacherOrAdmin)
             .WithName("ListClassStudents")
             .Produces<IReadOnlyList<ClassStudentDto>>();
@@ -128,6 +148,17 @@ internal static class SchoolEndpoints
             .RequireAuthorization(AuthorizationPolicies.AdminOnly)
             .WithName("CreateClass")
             .Produces<SchoolClassDto>(StatusCodes.Status201Created);
+
+        group.MapPut("/{id:guid}/homeroom-teacher", async (
+                Guid id,
+                AssignHomeroomTeacherRequest request,
+                IDispatcher dispatcher,
+                CancellationToken cancellationToken) =>
+                Results.Ok(await dispatcher.SendAsync(
+                    new AssignHomeroomTeacherCommand(id, request.TeacherUserId), cancellationToken)))
+            .RequireAuthorization(AuthorizationPolicies.AdminOnly)
+            .WithName("AssignHomeroomTeacher")
+            .Produces<SchoolClassDto>();
 
         group.MapPost("/{id:guid}/students", async (
                 Guid id,
@@ -415,6 +446,8 @@ internal sealed record CreateAcademicYearRequest(string Name, DateOnly StartsOn,
 internal sealed record CreateSubjectRequest(string Name, string Code);
 
 internal sealed record CreateClassRequest(Guid AcademicYearId, int Grade, string Section, Guid? HomeroomTeacherId);
+
+internal sealed record AssignHomeroomTeacherRequest(Guid? TeacherUserId);
 
 internal sealed record EnrollStudentRequest(Guid StudentUserId);
 

@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\EduPlatform.Modules.Notifications.Domain\EduPlatform.Modules.Notifications.Domain.csproj" />
+    <ProjectReference Include="..\EduPlatform.Modules.Notifications.Contracts\EduPlatform.Modules.Notifications.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\EduPlatform.BuildingBlocks.Application\EduPlatform.BuildingBlocks.Application.csproj" />
+  </ItemGroup>
+</Project>

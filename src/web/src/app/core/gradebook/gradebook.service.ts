@@ -32,6 +32,18 @@ export interface ClassGradebook {
   readonly students: readonly StudentRow[];
 }
 
+export interface Absence {
+  readonly id: string;
+  readonly studentUserId: string;
+  readonly studentName: string;
+  readonly teachingAssignmentId: string;
+  readonly subjectName: string;
+  readonly date: string;
+  readonly period: number;
+  readonly kind: string;
+  readonly note: string | null;
+}
+
 export interface SubjectPerformance {
   readonly teachingAssignmentId: string;
   readonly subjectName: string;
@@ -95,6 +107,16 @@ export class GradebookService {
 
   deleteGrade(id: string): Promise<void> {
     return firstValueFrom(this.http.delete<void>(`/api/v1/gradebook/grades/${id}`));
+  }
+
+  homeroomAbsences(): Promise<readonly Absence[]> {
+    return firstValueFrom(this.http.get<readonly Absence[]>('/api/v1/gradebook/homeroom/absences'));
+  }
+
+  excuseAbsence(id: string, note: string | null): Promise<Absence> {
+    return firstValueFrom(
+      this.http.put<Absence>(`/api/v1/gradebook/absences/${id}/excuse`, { note }),
+    );
   }
 
   recordAbsence(payload: {

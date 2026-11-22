@@ -13,6 +13,49 @@
   </nav>
 
   <div class="account">
+    <div class="bell-wrap">
+      <button
+        class="bell"
+        type="button"
+        [attr.aria-expanded]="panelOpen()"
+        aria-label="Известия"
+        (click)="togglePanel()"
+      >
+        Известия
+        @if (unreadCount() > 0) {
+          <span class="badge">{{ unreadCount() }}</span>
+        }
+      </button>
+
+      @if (panelOpen()) {
+        <div class="panel">
+          <div class="panel-head">
+            <strong>Известия</strong>
+            @if (unreadCount() > 0) {
+              <button type="button" class="link" (click)="markAllRead()">Прочети всички</button>
+            }
+          </div>
+
+          @if (feed().length === 0) {
+            <p class="empty">Няма известия.</p>
+          } @else {
+            <ul>
+              @for (item of feed(); track item.id) {
+                <li [class.is-unread]="!item.isRead">
+                  <button type="button" (click)="open(item)">
+                    <span class="title">{{ item.title }}</span>
+                    @if (item.body) {
+                      <span class="body">{{ item.body }}</span>
+                    }
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      }
+    </div>
+
     @if (user(); as current) {
       <span class="name">{{ current.fullName }}</span>
       <span class="role">{{ roleLabel() }}</span>

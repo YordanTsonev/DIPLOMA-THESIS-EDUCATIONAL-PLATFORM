@@ -64,6 +64,19 @@ internal sealed class GradebookReadStore(
             dbContext.Absences.AsNoTracking().Where(item => item.TeachingAssignmentId == teachingAssignmentId),
             cancellationToken);
 
+    public Task<IReadOnlyList<AbsenceDto>> ListAbsencesForStudentsAsync(
+        IReadOnlyCollection<Guid> studentUserIds,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(studentUserIds);
+
+        return studentUserIds.Count == 0
+            ? Task.FromResult<IReadOnlyList<AbsenceDto>>([])
+            : MapAbsencesAsync(
+                dbContext.Absences.AsNoTracking().Where(item => studentUserIds.Contains(item.StudentUserId)),
+                cancellationToken);
+    }
+
     public Task<IReadOnlyList<AbsenceDto>> ListAbsencesForStudentAsync(
         Guid studentUserId,
         CancellationToken cancellationToken = default) =>

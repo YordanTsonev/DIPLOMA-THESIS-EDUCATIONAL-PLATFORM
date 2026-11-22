@@ -57,6 +57,14 @@ export class SchoolService {
     );
   }
 
+  assignHomeroomTeacher(schoolClassId: string, teacherUserId: string | null): Promise<SchoolClass> {
+    return firstValueFrom(
+      this.http.put<SchoolClass>(`/api/v1/classes/${schoolClassId}/homeroom-teacher`, {
+        teacherUserId,
+      }),
+    );
+  }
+
   classStudents(schoolClassId: string): Promise<ClassStudent[]> {
     return firstValueFrom(this.http.get<ClassStudent[]>(`/api/v1/classes/${schoolClassId}/students`));
   }
